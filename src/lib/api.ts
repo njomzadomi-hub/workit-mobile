@@ -23,6 +23,8 @@ export async function api(path: string, opts: RequestInit = {}) {
 
 export const getFeed      = (cursor?: string) => api(`/posts/feed${cursor ? `?cursor=${cursor}` : ''}`);
 export const likePost     = (id: string) => api(`/posts/${id}/like`, { method: 'POST' });
+export const getComments  = (id: string, cursor?: string) => api(`/posts/${id}/comments${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
+export const addComment   = (id: string, body: string) => api(`/posts/${id}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
 export const getMe        = () => api('/profiles/me');
 export const getProfile   = (username: string) => api(`/profiles/${encodeURIComponent(username)}`);
 export const getUploadUrl = () => api('/videos/upload-url', { method: 'POST' });
