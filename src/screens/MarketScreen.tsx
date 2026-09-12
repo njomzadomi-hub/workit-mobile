@@ -4,7 +4,7 @@ import { getFeed, getMarket } from '../lib/api';
 import { C, R, postMeta } from '../lib/theme';
 import { demoMarket } from '../lib/demoData';
 
-export default function MarketScreen(){
+export default function MarketScreen({navigation}:any){
   const [items,setItems]=useState<any[]>(demoMarket.map(x=>({...x,source:'demo'})));
   const [tab,setTab]=useState('All');
   const [loading,setLoading]=useState(true);
@@ -20,6 +20,12 @@ export default function MarketScreen(){
   },[]);
 
   const visible=useMemo(()=>tab==='All'?items:items.filter(x=>x.type===tab.toLowerCase()),[items,tab]);
+  const rootNav=()=>navigation.getParent();
+  const open=(item:any)=>{
+    if(item.source==='market') return rootNav()?.navigate('MarketDetail',{id:item.id});
+    if(item.type==='job') return rootNav()?.navigate('JobDetail',{id:item.id});
+    if(item.author?.username) return rootNav()?.navigate('Professional',{username:item.author.username});
+  };
 
   return <ScrollView style={s.page} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
     <Text style={s.kicker}>WORKIT MARKET</Text><Text style={s.h1}>Buy work. Find work.</Text><Text style={s.sub}>Services, products, jobs and knowledge — directly from the people behind them.</Text>
@@ -33,7 +39,7 @@ export default function MarketScreen(){
       const rawPrice=item.price_amount ?? item.price;
       const price=rawPrice!=null?`${item.currency||'EUR'} ${Number(rawPrice).toFixed(0)}`:null;
       const seller=item.author||item.seller;
-      return <TouchableOpacity key={`${item.source||'item'}-${item.id||i}`} style={s.item} activeOpacity={.88}>
+      return <TouchableOpacity onPress={()=>open(item)} key={`${item.source||'item'}-${item.id||i}`} style={s.item} activeOpacity={.88}>
         {item.thumbnail_url?<Image source={{uri:item.thumbnail_url}} style={s.thumb}/>:<View style={[s.thumb,s.thumbPh]}><Text style={s.thumbPhTxt}>W</Text></View>}
         <View style={s.itemBody}><View style={s.itemTop}><Text style={[s.type,{color:meta.accent}]}>{meta.label}</Text><Text style={s.arrow}>↗</Text></View><Text numberOfLines={2} style={s.title}>{item.title||'Work opportunity'}</Text><Text numberOfLines={1} style={s.author}>{seller?.full_name||'WORKIT member'}{seller?.verified?' · Verified ✓':''}</Text>{seller?.rating&&<Text style={s.rating}>★ {seller.rating} · {seller.review_count||0} reviews</Text>}<View style={s.bottomRow}>{price?<Text style={s.price}>{price}</Text>:<View/>}<View style={[s.cta,{backgroundColor:meta.accent}]}><Text style={s.ctaTxt}>{meta.cta}</Text></View></View></View>
       </TouchableOpacity>
