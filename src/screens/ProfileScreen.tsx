@@ -2,57 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { getMe } from '../lib/api';
+import { C, R } from '../lib/theme';
 
-export default function ProfileScreen() {
-  const [p, setP] = useState<any>(null);
-
-  useEffect(() => { getMe().then(setP).catch(console.warn); }, []);
-
-  if (!p) return <View style={s.wrap} />;
-
-  return (
-    <ScrollView style={s.wrap} contentContainerStyle={{ padding: 24, paddingTop: 70 }}>
-      <View style={s.avatarWrap}>
-        {p.avatar_url
-          ? <Image source={{ uri: p.avatar_url }} style={s.avatar} />
-          : <View style={[s.avatar, s.avatarPh]}><Text style={s.avatarTxt}>{p.full_name?.[0]}</Text></View>}
-      </View>
-      <Text style={s.name}>{p.full_name}</Text>
-      {!!p.title && <Text style={s.title}>{p.title}</Text>}
-      {!!p.bio && <Text style={s.bio}>{p.bio}</Text>}
-      <View style={s.stats}>
-        <Stat n={p.video_count} l="Videos" />
-        <Stat n={p.follower_count} l="Followers" />
-        <Stat n={p.following_count} l="Following" />
-      </View>
-      <TouchableOpacity style={s.logout} onPress={() => supabase.auth.signOut()}>
-        <Text style={s.logoutTxt}>Log Out</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+export default function ProfileScreen(){
+ const [p,setP]=useState<any>(null); useEffect(()=>{getMe().then(setP).catch(console.warn)},[]);
+ if(!p)return <View style={s.page}/>;
+ return <ScrollView style={s.page} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+   <View style={s.topRow}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><TouchableOpacity><Text style={s.menu}>•••</Text></TouchableOpacity></View>
+   <View style={s.hero}>
+     <View style={s.avatarWrap}>{p.avatar_url?<Image source={{uri:p.avatar_url}} style={s.avatar}/>:<View style={[s.avatar,s.avatarPh]}><Text style={s.avatarTxt}>{p.full_name?.[0]||'W'}</Text></View>}<View style={s.online}/></View>
+     <Text style={s.name}>{p.full_name}</Text><Text style={s.handle}>@{(p.full_name||'workit').toLowerCase().replace(/\s+/g,'')}</Text>
+     {!!p.title&&<Text style={s.title}>{p.title}</Text>}{!!p.bio&&<Text style={s.bio}>{p.bio}</Text>}
+     <View style={s.roles}><Role t="SELL"/><Role t="HIRE"/><Role t="WORK"/><Role t="TEACH"/><Role t="BUY"/></View>
+   </View>
+   <View style={s.stats}><Stat n={p.video_count} l="Work posts"/><Stat n={p.follower_count} l="Followers"/><Stat n={p.following_count} l="Following"/></View>
+   <View style={s.actions}><TouchableOpacity style={s.primary}><Text style={s.primaryTxt}>Edit professional identity</Text></TouchableOpacity><TouchableOpacity style={s.secondary}><Text style={s.secondaryTxt}>Share ↗</Text></TouchableOpacity></View>
+   <View style={s.proof}><Text style={s.proofKicker}>WORK PROOF</Text><Text style={s.proofTitle}>Your profile is not a CV.</Text><Text style={s.proofBody}>It is a living proof-of-work page. Every video can become a service, job application, product, lesson, pitch or cause.</Text></View>
+   <View style={s.tabs}><Text style={[s.tab,s.tabOn]}>WORK</Text><Text style={s.tab}>MARKET</Text><Text style={s.tab}>ABOUT</Text><Text style={s.tab}>REVIEWS</Text></View>
+   <View style={s.grid}>{[0,1,2,3,4,5].map(i=><View key={i} style={s.tile}><Text style={s.tileIcon}>▶</Text><Text style={s.tileTxt}>{i<3?'Proof of work':'Your next post'}</Text></View>)}</View>
+   <TouchableOpacity style={s.logout} onPress={()=>supabase.auth.signOut()}><Text style={s.logoutTxt}>Log out</Text></TouchableOpacity>
+ </ScrollView>
 }
-
-const Stat = ({ n, l }: any) => (
-  <View style={s.stat}>
-    <Text style={s.statN}>{n ?? 0}</Text>
-    <Text style={s.statL}>{l}</Text>
-  </View>
-);
-
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#000' },
-  avatarWrap: { alignItems: 'center', marginBottom: 16 },
-  avatar: { width: 90, height: 90, borderRadius: 45 },
-  avatarPh: { backgroundColor: '#4F80FF', justifyContent: 'center', alignItems: 'center' },
-  avatarTxt: { color: '#fff', fontSize: 34, fontWeight: '700' },
-  name: { color: '#fff', fontSize: 22, fontWeight: '700', textAlign: 'center' },
-  title: { color: '#888', fontSize: 14, textAlign: 'center', marginTop: 4 },
-  bio: { color: '#aaa', fontSize: 14, textAlign: 'center', marginTop: 12, lineHeight: 21 },
-  stats: { flexDirection: 'row', justifyContent: 'center', gap: 40, marginVertical: 26 },
-  stat: { alignItems: 'center' },
-  statN: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  statL: { color: '#666', fontSize: 11, marginTop: 3, textTransform: 'uppercase' },
-  logout: { borderWidth: 1, borderColor: '#333', borderRadius: 13, height: 48,
-            justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-  logoutTxt: { color: '#FF6060', fontWeight: '600' },
-});
+const Role=({t}:{t:string})=><View style={s.role}><Text style={s.roleTxt}>{t}</Text></View>;
+const Stat=({n,l}:any)=><View style={s.stat}><Text style={s.statN}>{n??0}</Text><Text style={s.statL}>{l}</Text></View>;
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},content:{paddingTop:52,paddingHorizontal:18,paddingBottom:120},topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},wordmark:{color:C.text,fontSize:18,fontWeight:'900',letterSpacing:-.8},menu:{color:C.muted,fontSize:20,letterSpacing:2},hero:{alignItems:'center',marginTop:18},avatarWrap:{position:'relative'},avatar:{width:92,height:92,borderRadius:46},avatarPh:{backgroundColor:C.panel2,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:C.line},avatarTxt:{color:C.text,fontSize:34,fontWeight:'900'},online:{position:'absolute',right:3,bottom:5,width:17,height:17,borderRadius:9,backgroundColor:C.green,borderWidth:3,borderColor:C.bg},name:{color:C.text,fontSize:24,fontWeight:'900',letterSpacing:-.7,marginTop:13},handle:{color:C.faint,fontSize:11,fontWeight:'700',marginTop:2},title:{color:C.text,fontSize:14,fontWeight:'700',marginTop:10},bio:{color:C.muted,fontSize:12,lineHeight:19,textAlign:'center',maxWidth:330,marginTop:7},roles:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:6,marginTop:14},role:{paddingHorizontal:9,paddingVertical:5,borderRadius:R.pill,borderWidth:1,borderColor:C.line,backgroundColor:C.panel},roleTxt:{color:C.blue2,fontSize:8,fontWeight:'900',letterSpacing:.7},stats:{flexDirection:'row',justifyContent:'space-around',paddingVertical:18,marginTop:16,borderTopWidth:1,borderBottomWidth:1,borderColor:C.line},stat:{alignItems:'center'},statN:{color:C.text,fontSize:18,fontWeight:'900'},statL:{color:C.faint,fontSize:9,fontWeight:'700',marginTop:3,textTransform:'uppercase'},actions:{flexDirection:'row',gap:8,marginTop:16},primary:{flex:1,height:46,borderRadius:14,backgroundColor:C.text,alignItems:'center',justifyContent:'center'},primaryTxt:{color:'#050505',fontSize:11,fontWeight:'900'},secondary:{height:46,paddingHorizontal:16,borderRadius:14,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,alignItems:'center',justifyContent:'center'},secondaryTxt:{color:C.text,fontSize:11,fontWeight:'800'},proof:{marginTop:18,padding:18,borderRadius:20,backgroundColor:'#11141B',borderWidth:1,borderColor:'#232A3B'},proofKicker:{color:C.blue2,fontSize:8,fontWeight:'900',letterSpacing:1},proofTitle:{color:C.text,fontSize:17,fontWeight:'900',marginTop:6},proofBody:{color:C.muted,fontSize:12,lineHeight:18,marginTop:5},tabs:{flexDirection:'row',gap:22,marginTop:22,borderBottomWidth:1,borderColor:C.line},tab:{color:C.faint,fontSize:9,fontWeight:'900',paddingBottom:10,letterSpacing:.7},tabOn:{color:C.text,borderBottomWidth:2,borderColor:C.text},grid:{flexDirection:'row',flexWrap:'wrap',gap:4,marginTop:12},tile:{width:'32.6%',aspectRatio:.76,borderRadius:10,backgroundColor:C.panel,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:C.line},tileIcon:{color:C.faint,fontSize:16},tileTxt:{color:C.faint,fontSize:8,fontWeight:'700',marginTop:6},logout:{height:48,borderRadius:14,borderWidth:1,borderColor:C.line,alignItems:'center',justifyContent:'center',marginTop:24},logoutTxt:{color:C.red,fontSize:11,fontWeight:'800'}});
