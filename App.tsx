@@ -17,6 +17,7 @@ import PricingScreen from './src/screens/PricingScreen';
 import EarningsScreen from './src/screens/EarningsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import LegalScreen from './src/screens/LegalScreen';
+import HiringScreen from './src/screens/HiringScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import ChatScreen from './src/screens/ChatScreen';
 
@@ -32,6 +33,7 @@ function ProfileStackScreen() {
     <ProfileStack.Screen name="ProfileHome" component={ProfileScreen}/>
     <ProfileStack.Screen name="Pricing" component={PricingScreen}/>
     <ProfileStack.Screen name="Earnings" component={EarningsScreen}/>
+    <ProfileStack.Screen name="Hiring" component={HiringScreen}/>
     <ProfileStack.Screen name="Settings" component={SettingsScreen}/>
     <ProfileStack.Screen name="Legal" component={LegalScreen}/>
   </ProfileStack.Navigator>;
