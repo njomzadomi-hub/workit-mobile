@@ -26,6 +26,9 @@ import ProfessionalScreen from './src/screens/ProfessionalScreen';
 import GlobalSearchScreen from './src/screens/GlobalSearchScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import CommentsScreen from './src/screens/CommentsScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import MyApplicationsScreen from './src/screens/MyApplicationsScreen';
+import MyOrdersScreen from './src/screens/MyOrdersScreen';
 
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -37,6 +40,7 @@ const icons: Record<string,string> = { Feed:'⌂', Explore:'◉', Post:'＋', Ma
 function ProfileStackScreen() {
   return <ProfileStack.Navigator screenOptions={{headerShown:false}}>
     <ProfileStack.Screen name="ProfileHome" component={ProfileScreen}/>
+    <ProfileStack.Screen name="EditProfile" component={EditProfileScreen}/>
     <ProfileStack.Screen name="Pricing" component={PricingScreen}/>
     <ProfileStack.Screen name="Earnings" component={EarningsScreen}/>
     <ProfileStack.Screen name="Hiring" component={HiringScreen}/>
@@ -79,6 +83,8 @@ function LoggedInApp(){
    <AppStack.Screen name="MarketDetail" component={MarketDetailScreen}/>
    <AppStack.Screen name="JobDetail" component={JobDetailScreen}/>
    <AppStack.Screen name="Professional" component={ProfessionalScreen}/>
+   <AppStack.Screen name="MyApplications" component={MyApplicationsScreen}/>
+   <AppStack.Screen name="MyOrders" component={MyOrdersScreen}/>
  </AppStack.Navigator>;
 }
 
