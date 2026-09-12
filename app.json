@@ -21,7 +21,8 @@
         {
           "photosPermission": "Allow WORKIT to access videos you choose to show your work."
         }
-      ]
+      ],
+      "expo-notifications"
     ]
   }
 }
