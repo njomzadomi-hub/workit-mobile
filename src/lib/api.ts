@@ -26,6 +26,11 @@ export const likePost     = (id: string) => api(`/posts/${id}/like`, { method: '
 export const getMe        = () => api('/profiles/me');
 export const getUploadUrl = () => api('/videos/upload-url', { method: 'POST' });
 
+export const searchTalent = (params: { query?: string; profession?: string; skill?: string; location?: string; country?: string; available?: boolean; limit?: number } = {}) => {
+  const qs = Object.entries(params).filter(([,v]) => v !== undefined && v !== '' && v !== false).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
+  return api(`/profiles/search${qs ? `?${qs}` : ''}`);
+};
+
 export const getMarket = (params: { type?: string; country?: string; q?: string; cursor?: string } = {}) => {
   const qs = Object.entries(params).filter(([,v]) => v).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
   return api(`/market${qs ? `?${qs}` : ''}`);
