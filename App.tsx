@@ -29,6 +29,7 @@ import CommentsScreen from './src/screens/CommentsScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import MyApplicationsScreen from './src/screens/MyApplicationsScreen';
 import MyOrdersScreen from './src/screens/MyOrdersScreen';
+import SavedItemsScreen from './src/screens/SavedItemsScreen';
 
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -85,6 +86,7 @@ function LoggedInApp(){
    <AppStack.Screen name="Professional" component={ProfessionalScreen}/>
    <AppStack.Screen name="MyApplications" component={MyApplicationsScreen}/>
    <AppStack.Screen name="MyOrders" component={MyOrdersScreen}/>
+   <AppStack.Screen name="Saved" component={SavedItemsScreen}/>
  </AppStack.Navigator>;
 }
 
