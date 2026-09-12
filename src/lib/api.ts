@@ -52,3 +52,8 @@ export const createReview = (payload: any) => api('/reviews', { method: 'POST', 
 export const getRevenuePlans = () => api('/revenue/plans');
 export const getEarnings = () => api('/revenue/earnings');
 export const submitReport = (payload: any) => api('/reports', { method: 'POST', body: JSON.stringify(payload) });
+
+export const getConversations = () => api('/messages/conversations');
+export const openConversation = (otherId: string) => api(`/messages/open/${otherId}`, { method: 'POST' });
+export const getMessages = (conversationId: string, cursor?: string) => api(`/messages/${conversationId}${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
+export const sendMessage = (conversationId: string, body: string) => api(`/messages/${conversationId}`, { method: 'POST', body: JSON.stringify({ body }) });
