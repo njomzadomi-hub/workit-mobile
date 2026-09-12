@@ -15,6 +15,13 @@ export default function FeedScreen({navigation}:any) {
   const onViewable=useRef(({viewableItems}:any)=>{if(viewableItems[0])setActiveIdx(viewableItems[0].index)}).current;
   const like=async(id:string,idx:number)=>{setItems(p=>p.map((x,i)=>i===idx?{...x,like_count:(x.like_count||0)+1}:x));if(id.startsWith('demo-'))return;try{await likePost(id)}catch{}};
   const openInbox=()=>navigation.getParent()?.navigate('Inbox');
+  const rootNav=()=>navigation.getParent();
+  const openProfessional=(item:any)=>{const username=item.author?.username;if(username)rootNav()?.navigate('Professional',{username})};
+  const act=(item:any)=>{
+    if(['service','product','teach'].includes(item.type)&&item.market_item_id) return rootNav()?.navigate('MarketDetail',{id:item.market_item_id});
+    if(item.type==='job') return rootNav()?.navigate('JobDetail',{id:item.id});
+    return openProfessional(item);
+  };
 
   return <View style={s.root}>
     <View style={s.top}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><View style={s.modes}>{['For You','Following'].map(x=><TouchableOpacity key={x} onPress={()=>setMode(x)}><Text style={[s.mode,mode===x&&s.modeOn]}>{x}</Text></TouchableOpacity>)}</View><TouchableOpacity onPress={openInbox}><Text style={s.inbox}>✦</Text></TouchableOpacity></View>
@@ -24,15 +31,15 @@ export default function FeedScreen({navigation}:any) {
         <View style={s.scrim}/>
         <View style={[s.badge,{borderColor:meta.accent}]}><Text style={[s.badgeTxt,{color:meta.accent}]}>{meta.label}</Text></View>
         <View style={s.side}>
-          <TouchableOpacity style={s.avatarRing}>{item.author?.avatar_url?<Image source={{uri:item.author.avatar_url}} style={s.avatar}/>:<Text style={s.avatarLetter}>{item.author?.full_name?.[0]||'W'}</Text>}</TouchableOpacity>
+          <TouchableOpacity onPress={()=>openProfessional(item)} style={s.avatarRing}>{item.author?.avatar_url?<Image source={{uri:item.author.avatar_url}} style={s.avatar}/>:<Text style={s.avatarLetter}>{item.author?.full_name?.[0]||'W'}</Text>}</TouchableOpacity>
           <TouchableOpacity onPress={()=>like(item.id,index)} style={s.action}><Text style={s.actionIcon}>♥</Text><Text style={s.actionN}>{item.like_count||0}</Text></TouchableOpacity>
           <TouchableOpacity style={s.action}><Text style={s.actionIcon}>◌</Text><Text style={s.actionN}>{item.comment_count||0}</Text></TouchableOpacity>
           <TouchableOpacity style={s.action}><Text style={s.actionIcon}>↗</Text><Text style={s.actionN}>Share</Text></TouchableOpacity>
         </View>
         <View style={s.info}>
-          <Text style={s.name}>{item.author?.full_name||'WORKIT member'} {item.author?.verified?'✓':''}</Text><Text style={s.role}>{item.author?.title||'Professional'} · View profile</Text>
+          <TouchableOpacity onPress={()=>openProfessional(item)}><Text style={s.name}>{item.author?.full_name||'WORKIT member'} {item.author?.verified?'✓':''}</Text><Text style={s.role}>{item.author?.title||'Professional'} · View profile</Text></TouchableOpacity>
           <Text style={s.title}>{item.title||'See my work'}</Text>{!!item.description&&<Text numberOfLines={2} style={s.desc}>{item.description}</Text>}
-          <TouchableOpacity style={[s.cta,{backgroundColor:meta.accent}]}><Text style={s.ctaTxt}>{meta.cta}</Text><Text style={s.ctaArrow}>→</Text></TouchableOpacity>
+          <TouchableOpacity onPress={()=>act(item)} style={[s.cta,{backgroundColor:meta.accent}]}><Text style={s.ctaTxt}>{meta.cta}</Text><Text style={s.ctaArrow}>→</Text></TouchableOpacity>
           <Text style={s.truth}>REAL WORK • REAL PEOPLE • GLOBAL</Text>
         </View>
       </View>}}
