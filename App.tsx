@@ -15,6 +15,8 @@ import MarketScreen from './src/screens/MarketScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import PricingScreen from './src/screens/PricingScreen';
 import EarningsScreen from './src/screens/EarningsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import LegalScreen from './src/screens/LegalScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -27,6 +29,8 @@ function ProfileStackScreen() {
     <ProfileStack.Screen name="ProfileHome" component={ProfileScreen}/>
     <ProfileStack.Screen name="Pricing" component={PricingScreen}/>
     <ProfileStack.Screen name="Earnings" component={EarningsScreen}/>
+    <ProfileStack.Screen name="Settings" component={SettingsScreen}/>
+    <ProfileStack.Screen name="Legal" component={LegalScreen}/>
   </ProfileStack.Navigator>;
 }
 
