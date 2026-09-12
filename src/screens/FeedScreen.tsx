@@ -1,101 +1,46 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, Dimensions, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { getFeed, likePost } from '../lib/api';
+import { C, R, postMeta } from '../lib/theme';
 
 const { height: H } = Dimensions.get('window');
+const FEED_H = H - 74;
 
 export default function FeedScreen() {
-  const [items, setItems] = useState<any[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [items,setItems]=useState<any[]>([]); const [cursor,setCursor]=useState<string|null>(null); const [activeIdx,setActiveIdx]=useState(0); const [mode,setMode]=useState('For You');
+  const load=async(c?:string)=>{try{const res=await getFeed(c);setItems(p=>c?[...p,...res.items]:res.items);setCursor(res.nextCursor)}catch(e){console.warn(e)}};
+  useEffect(()=>{load()},[]);
+  const onViewable=useRef(({viewableItems}:any)=>{if(viewableItems[0])setActiveIdx(viewableItems[0].index)}).current;
+  const like=async(id:string,idx:number)=>{setItems(p=>p.map((x,i)=>i===idx?{...x,like_count:(x.like_count||0)+1}:x));try{await likePost(id)}catch{}};
 
-  const load = async (c?: string) => {
-    try {
-      const res = await getFeed(c ?? undefined);
-      setItems(prev => (c ? [...prev, ...res.items] : res.items));
-      setCursor(res.nextCursor);
-    } catch (e) { console.warn(e); }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const onViewable = useRef(({ viewableItems }: any) => {
-    if (viewableItems[0]) setActiveIdx(viewableItems[0].index);
-  }).current;
-
-  const like = async (id: string, idx: number) => {
-    setItems(prev => prev.map((p, i) => i === idx ? { ...p, like_count: p.like_count + 1 } : p));
-    try { await likePost(id); } catch {}
-  };
-
-  return (
-    <FlatList
-      data={items}
-      keyExtractor={i => i.id}
-      pagingEnabled
-      showsVerticalScrollIndicator={false}
-      snapToInterval={H}
-      decelerationRate="fast"
-      onViewableItemsChanged={onViewable}
-      viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-      onEndReached={() => cursor && load(cursor)}
-      onEndReachedThreshold={2}
-      renderItem={({ item, index }) => (
-        <View style={{ height: H, backgroundColor: '#000' }}>
-          {item.cf_playback_url ? (
-            <Video
-              source={{ uri: item.cf_playback_url }}
-              style={StyleSheet.absoluteFill}
-              resizeMode={ResizeMode.COVER}
-              shouldPlay={index === activeIdx}
-              isLooping
-              isMuted={false}
-            />
-          ) : item.thumbnail_url ? (
-            <Image source={{ uri: item.thumbnail_url }} style={StyleSheet.absoluteFill} />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#111' }]} />
-          )}
-
-          <View style={s.overlay}>
-            <View style={s.badge}><Text style={s.badgeTxt}>{item.type.toUpperCase()}</Text></View>
-            <View style={s.info}>
-              <Text style={s.name}>{item.author?.full_name}</Text>
-              <Text style={s.role}>{item.author?.title}</Text>
-              <Text style={s.title}>{item.title}</Text>
-              {!!item.description && <Text style={s.desc} numberOfLines={2}>{item.description}</Text>}
-            </View>
-            <View style={s.side}>
-              <TouchableOpacity style={s.action} onPress={() => like(item.id, index)}>
-                <Text style={s.actionIcon}>♥</Text>
-                <Text style={s.actionN}>{item.like_count}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.action}>
-                <Text style={s.actionIcon}>💬</Text>
-                <Text style={s.actionN}>{item.comment_count}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+  return <View style={s.root}>
+    <View style={s.top}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><View style={s.modes}>{['For You','Following'].map(x=><TouchableOpacity key={x} onPress={()=>setMode(x)}><Text style={[s.mode,mode===x&&s.modeOn]}>{x}</Text></TouchableOpacity>)}</View><Text style={s.inbox}>✦</Text></View>
+    <FlatList data={items} keyExtractor={(i,idx)=>i.id||String(idx)} pagingEnabled showsVerticalScrollIndicator={false} snapToInterval={FEED_H} decelerationRate="fast" onViewableItemsChanged={onViewable} viewabilityConfig={{itemVisiblePercentThreshold:60}} onEndReached={()=>cursor&&load(cursor)} onEndReachedThreshold={2}
+      renderItem={({item,index})=>{const meta=postMeta[item.type]||postMeta.video;return <View style={s.card}>
+        {item.cf_playback_url?<Video source={{uri:item.cf_playback_url}} style={StyleSheet.absoluteFill} resizeMode={ResizeMode.COVER} shouldPlay={index===activeIdx} isLooping/>:item.thumbnail_url?<Image source={{uri:item.thumbnail_url}} style={StyleSheet.absoluteFill}/>:<View style={[StyleSheet.absoluteFill,s.fallback]}><Text style={s.fallbackTxt}>WORKIT</Text></View>}
+        <View style={s.scrim}/>
+        <View style={[s.badge,{borderColor:meta.accent}]}><Text style={[s.badgeTxt,{color:meta.accent}]}>{meta.label}</Text></View>
+        <View style={s.side}>
+          <TouchableOpacity style={s.avatarRing}>{item.author?.avatar_url?<Image source={{uri:item.author.avatar_url}} style={s.avatar}/>:<Text style={s.avatarLetter}>{item.author?.full_name?.[0]||'W'}</Text>}</TouchableOpacity>
+          <TouchableOpacity onPress={()=>like(item.id,index)} style={s.action}><Text style={s.actionIcon}>♥</Text><Text style={s.actionN}>{item.like_count||0}</Text></TouchableOpacity>
+          <TouchableOpacity style={s.action}><Text style={s.actionIcon}>◌</Text><Text style={s.actionN}>{item.comment_count||0}</Text></TouchableOpacity>
+          <TouchableOpacity style={s.action}><Text style={s.actionIcon}>↗</Text><Text style={s.actionN}>Share</Text></TouchableOpacity>
         </View>
-      )}
+        <View style={s.info}>
+          <Text style={s.name}>{item.author?.full_name||'WORKIT member'}</Text><Text style={s.role}>{item.author?.title||'Professional'} · View profile</Text>
+          <Text style={s.title}>{item.title||'See my work'}</Text>{!!item.description&&<Text numberOfLines={2} style={s.desc}>{item.description}</Text>}
+          <TouchableOpacity style={[s.cta,{backgroundColor:meta.accent}]}><Text style={s.ctaTxt}>{meta.cta}</Text><Text style={s.ctaArrow}>→</Text></TouchableOpacity>
+          <Text style={s.truth}>REAL WORK • REAL PEOPLE • GLOBAL</Text>
+        </View>
+      </View>}}
     />
-  );
+  </View>
 }
 
-const s = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
-  badge: { position: 'absolute', top: 56, left: 18, backgroundColor: 'rgba(79,128,255,.25)',
-           borderRadius: 100, paddingHorizontal: 11, paddingVertical: 4,
-           borderWidth: 1, borderColor: 'rgba(79,128,255,.4)' },
-  badgeTxt: { color: '#4F80FF', fontSize: 10, fontWeight: '700', letterSpacing: .5 },
-  info: { padding: 18, paddingBottom: 90, paddingRight: 80 },
-  name: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  role: { color: 'rgba(255,255,255,.55)', fontSize: 12, marginBottom: 8 },
-  title: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  desc: { color: 'rgba(255,255,255,.8)', fontSize: 13, lineHeight: 20 },
-  side: { position: 'absolute', right: 14, bottom: 120, alignItems: 'center', gap: 20 },
-  action: { alignItems: 'center' },
-  actionIcon: { fontSize: 26, color: '#fff' },
-  actionN: { color: '#fff', fontSize: 11, fontWeight: '600', marginTop: 3 },
+const s=StyleSheet.create({
+ root:{flex:1,backgroundColor:C.bg},top:{height:54,position:'absolute',top:0,left:0,right:0,zIndex:20,paddingHorizontal:16,paddingTop:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},wordmark:{color:'#fff',fontSize:19,fontWeight:'900',letterSpacing:-1},modes:{flexDirection:'row',gap:16},mode:{color:'rgba(255,255,255,.45)',fontSize:12,fontWeight:'800'},modeOn:{color:'#fff'},inbox:{color:'#fff',fontSize:19},
+ card:{height:FEED_H,backgroundColor:'#090909'},fallback:{backgroundColor:'#111',alignItems:'center',justifyContent:'center'},fallbackTxt:{color:'#222',fontSize:44,fontWeight:'900',letterSpacing:4},scrim:{...StyleSheet.absoluteFillObject,backgroundColor:'rgba(0,0,0,.18)'},badge:{position:'absolute',top:64,left:16,borderWidth:1,borderRadius:R.pill,paddingHorizontal:10,paddingVertical:5,backgroundColor:'rgba(0,0,0,.5)'},badgeTxt:{fontSize:9,fontWeight:'900',letterSpacing:.9},
+ side:{position:'absolute',right:14,bottom:172,alignItems:'center',gap:18},avatarRing:{width:46,height:46,borderRadius:23,borderWidth:2,borderColor:'#fff',backgroundColor:'#1A1A1D',alignItems:'center',justifyContent:'center',overflow:'hidden'},avatar:{width:'100%',height:'100%'},avatarLetter:{color:'#fff',fontWeight:'900'},action:{alignItems:'center'},actionIcon:{color:'#fff',fontSize:25,fontWeight:'700'},actionN:{color:'#fff',fontSize:9,fontWeight:'700',marginTop:2},
+ info:{position:'absolute',left:16,right:78,bottom:24},name:{color:'#fff',fontSize:17,fontWeight:'900'},role:{color:'rgba(255,255,255,.65)',fontSize:11,marginTop:2},title:{color:'#fff',fontSize:18,fontWeight:'800',lineHeight:23,marginTop:13},desc:{color:'rgba(255,255,255,.76)',fontSize:12,lineHeight:18,marginTop:5},cta:{height:44,borderRadius:14,marginTop:14,flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:15},ctaTxt:{color:'#070707',fontSize:13,fontWeight:'900'},ctaArrow:{color:'#070707',fontSize:18,fontWeight:'700'},truth:{color:'rgba(255,255,255,.35)',fontSize:8,fontWeight:'900',letterSpacing:1.1,marginTop:10}
 });
