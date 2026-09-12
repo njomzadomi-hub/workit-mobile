@@ -13,11 +13,22 @@ import ExploreScreen from './src/screens/ExploreScreen';
 import UploadScreen from './src/screens/UploadScreen';
 import MarketScreen from './src/screens/MarketScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import PricingScreen from './src/screens/PricingScreen';
+import EarningsScreen from './src/screens/EarningsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
 
 const icons: Record<string,string> = { Feed:'◉', Explore:'⌕', Post:'＋', Market:'◇', Profile:'●' };
+
+function ProfileStackScreen() {
+  return <ProfileStack.Navigator screenOptions={{headerShown:false}}>
+    <ProfileStack.Screen name="ProfileHome" component={ProfileScreen}/>
+    <ProfileStack.Screen name="Pricing" component={PricingScreen}/>
+    <ProfileStack.Screen name="Earnings" component={EarningsScreen}/>
+  </ProfileStack.Navigator>;
+}
 
 function Tabs() {
   return (
@@ -34,7 +45,7 @@ function Tabs() {
       <Tab.Screen name="Explore" component={ExploreScreen}/>
       <Tab.Screen name="Post" component={UploadScreen}/>
       <Tab.Screen name="Market" component={MarketScreen}/>
-      <Tab.Screen name="Profile" component={ProfileScreen}/>
+      <Tab.Screen name="Profile" component={ProfileStackScreen}/>
     </Tab.Navigator>
   );
 }
