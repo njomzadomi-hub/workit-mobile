@@ -26,7 +26,8 @@
     "expo-av": "*",
     "expo-image-picker": "*",
     "expo-status-bar": "*",
-    "expo-constants": "*"
+    "expo-constants": "*",
+    "expo-notifications": "~57.0.17"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
