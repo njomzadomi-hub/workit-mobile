@@ -20,6 +20,9 @@ import LegalScreen from './src/screens/LegalScreen';
 import HiringScreen from './src/screens/HiringScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import MarketDetailScreen from './src/screens/MarketDetailScreen';
+import JobDetailScreen from './src/screens/JobDetailScreen';
+import ProfessionalScreen from './src/screens/ProfessionalScreen';
 
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -62,6 +65,9 @@ function LoggedInApp(){
    <AppStack.Screen name="MainTabs" component={Tabs}/>
    <AppStack.Screen name="Inbox" component={InboxScreen}/>
    <AppStack.Screen name="Chat" component={ChatScreen}/>
+   <AppStack.Screen name="MarketDetail" component={MarketDetailScreen}/>
+   <AppStack.Screen name="JobDetail" component={JobDetailScreen}/>
+   <AppStack.Screen name="Professional" component={ProfessionalScreen}/>
  </AppStack.Navigator>;
 }
 
