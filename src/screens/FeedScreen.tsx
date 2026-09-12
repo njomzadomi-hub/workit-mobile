@@ -8,15 +8,16 @@ import { demoFeed } from '../lib/demoData';
 const { height: H } = Dimensions.get('window');
 const FEED_H = H - 74;
 
-export default function FeedScreen() {
+export default function FeedScreen({navigation}:any) {
   const [items,setItems]=useState<any[]>(demoFeed); const [cursor,setCursor]=useState<string|null>(null); const [activeIdx,setActiveIdx]=useState(0); const [mode,setMode]=useState('For You');
   const load=async(c?:string)=>{try{const res=await getFeed(c);const fresh=res.items||[];setItems(p=>c?[...p,...fresh]:(fresh.length?fresh:demoFeed));setCursor(res.nextCursor)}catch(e){if(!c)setItems(demoFeed)}};
   useEffect(()=>{load()},[]);
   const onViewable=useRef(({viewableItems}:any)=>{if(viewableItems[0])setActiveIdx(viewableItems[0].index)}).current;
   const like=async(id:string,idx:number)=>{setItems(p=>p.map((x,i)=>i===idx?{...x,like_count:(x.like_count||0)+1}:x));if(id.startsWith('demo-'))return;try{await likePost(id)}catch{}};
+  const openInbox=()=>navigation.getParent()?.navigate('Inbox');
 
   return <View style={s.root}>
-    <View style={s.top}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><View style={s.modes}>{['For You','Following'].map(x=><TouchableOpacity key={x} onPress={()=>setMode(x)}><Text style={[s.mode,mode===x&&s.modeOn]}>{x}</Text></TouchableOpacity>)}</View><Text style={s.inbox}>✦</Text></View>
+    <View style={s.top}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><View style={s.modes}>{['For You','Following'].map(x=><TouchableOpacity key={x} onPress={()=>setMode(x)}><Text style={[s.mode,mode===x&&s.modeOn]}>{x}</Text></TouchableOpacity>)}</View><TouchableOpacity onPress={openInbox}><Text style={s.inbox}>✦</Text></TouchableOpacity></View>
     <FlatList data={items} keyExtractor={(i,idx)=>i.id||String(idx)} pagingEnabled showsVerticalScrollIndicator={false} snapToInterval={FEED_H} decelerationRate="fast" onViewableItemsChanged={onViewable} viewabilityConfig={{itemVisiblePercentThreshold:60}} onEndReached={()=>cursor&&load(cursor)} onEndReachedThreshold={2}
       renderItem={({item,index})=>{const meta=postMeta[item.type]||postMeta.video;return <View style={s.card}>
         {item.cf_playback_url?<Video source={{uri:item.cf_playback_url}} style={StyleSheet.absoluteFill} resizeMode={ResizeMode.COVER} shouldPlay={index===activeIdx} isLooping/>:item.thumbnail_url?<Image source={{uri:item.thumbnail_url}} style={StyleSheet.absoluteFill} resizeMode="cover"/>:<View style={[StyleSheet.absoluteFill,s.fallback]}><Text style={s.fallbackTxt}>WORKIT</Text></View>}
