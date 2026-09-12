@@ -42,3 +42,5 @@ export const getMyOrders = () => api('/orders/mine');
 export const setOrderStatus = (id: string, status: string) => api(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
 export const getProfileReviews = (profileId: string) => api(`/reviews/profile/${profileId}`);
 export const createReview = (payload: any) => api('/reviews', { method: 'POST', body: JSON.stringify(payload) });
+export const getRevenuePlans = () => api('/revenue/plans');
+export const getEarnings = () => api('/revenue/earnings');
