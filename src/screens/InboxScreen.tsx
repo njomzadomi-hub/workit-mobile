@@ -1,0 +1,15 @@
+import React, { useEffect, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getConversations } from '../lib/api';
+import { C } from '../lib/theme';
+
+export default function InboxScreen({navigation}:any){
+ const [items,setItems]=useState<any[]>([]); const [loading,setLoading]=useState(true);
+ useEffect(()=>{getConversations().then(setItems).catch(()=>setItems([])).finally(()=>setLoading(false))},[]);
+ return <ScrollView style={s.page} contentContainerStyle={s.content}>
+  <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹ Back</Text></TouchableOpacity>
+  <Text style={s.kicker}>WORKIT INBOX</Text><Text style={s.h1}>Messages</Text><Text style={s.sub}>Hiring, bookings, projects and work conversations in one place.</Text>
+  <View style={s.list}>{loading?<Text style={s.empty}>Loading conversations…</Text>:items.length?items.map((c:any)=><TouchableOpacity key={c.id} style={s.row} onPress={()=>navigation.navigate('Chat',{conversationId:c.id,other:c.other})} activeOpacity={.85}>{c.other?.avatar_url?<Image source={{uri:c.other.avatar_url}} style={s.avatar}/>:<View style={[s.avatar,s.ph]}><Text style={s.letter}>{c.other?.full_name?.[0]||'W'}</Text></View>}<View style={s.body}><View style={s.top}><Text style={s.name}>{c.other?.full_name||'WORKIT member'}</Text>{c.unread>0?<View style={s.badge}><Text style={s.badgeTxt}>{c.unread}</Text></View>:null}</View><Text numberOfLines={1} style={s.preview}>{c.last_message?.body||'Start a work conversation'}</Text></View></TouchableOpacity>):<View style={s.emptyCard}><Text style={s.emptyTitle}>No conversations yet.</Text><Text style={s.empty}>When you hire, apply, book or message someone, the conversation will appear here.</Text></View>}</View>
+ </ScrollView>
+}
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},content:{paddingTop:54,paddingHorizontal:18,paddingBottom:70},back:{color:C.blue2,fontSize:12,fontWeight:'800',marginBottom:20},kicker:{color:C.green,fontSize:9,fontWeight:'900',letterSpacing:1.2},h1:{color:C.text,fontSize:30,fontWeight:'900',letterSpacing:-1,marginTop:5},sub:{color:C.muted,fontSize:12,lineHeight:18,marginTop:6},list:{marginTop:22,gap:9},row:{minHeight:78,borderRadius:17,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,padding:11,flexDirection:'row',alignItems:'center'},avatar:{width:54,height:54,borderRadius:16},ph:{backgroundColor:C.panel2,alignItems:'center',justifyContent:'center'},letter:{color:C.text,fontSize:19,fontWeight:'900'},body:{flex:1,marginLeft:11},top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},name:{color:C.text,fontSize:14,fontWeight:'900'},preview:{color:C.muted,fontSize:10,marginTop:5},badge:{minWidth:20,height:20,borderRadius:10,backgroundColor:C.blue,alignItems:'center',justifyContent:'center',paddingHorizontal:5},badgeTxt:{color:'#fff',fontSize:9,fontWeight:'900'},emptyCard:{padding:20,borderRadius:18,borderWidth:1,borderColor:C.line,backgroundColor:C.panel},emptyTitle:{color:C.text,fontSize:15,fontWeight:'900'},empty:{color:C.muted,fontSize:11,lineHeight:17,marginTop:5}});
