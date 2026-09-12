@@ -48,3 +48,4 @@ export const getMessages=(conversationId:string,cursor?:string)=>api(`/messages/
 export const sendMessage=(conversationId:string,body:string)=>api(`/messages/${conversationId}`,{method:'POST',body:JSON.stringify({body})});
 export const getNotifications=()=>api('/notifications');
 export const markAllNotificationsRead=()=>api('/notifications/read-all',{method:'POST'});
+export const registerPushDevice=(pushToken:string,platform:string)=>api('/notifications/device',{method:'POST',body:JSON.stringify({push_token:pushToken,platform,provider:'expo'})});
