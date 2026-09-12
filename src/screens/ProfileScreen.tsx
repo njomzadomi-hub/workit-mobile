@@ -8,7 +8,7 @@ export default function ProfileScreen({ navigation }: any){
  const [p,setP]=useState<any>(null); useEffect(()=>{getMe().then(setP).catch(console.warn)},[]);
  if(!p)return <View style={s.page}/>;
  return <ScrollView style={s.page} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-   <View style={s.topRow}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><TouchableOpacity><Text style={s.menu}>•••</Text></TouchableOpacity></View>
+   <View style={s.topRow}><Text style={s.wordmark}>WORK<Text style={{color:C.blue2}}>IT</Text></Text><TouchableOpacity onPress={()=>navigation.navigate('Settings')}><Text style={s.menu}>•••</Text></TouchableOpacity></View>
    <View style={s.hero}>
      <View style={s.avatarWrap}>{p.avatar_url?<Image source={{uri:p.avatar_url}} style={s.avatar}/>:<View style={[s.avatar,s.avatarPh]}><Text style={s.avatarTxt}>{p.full_name?.[0]||'W'}</Text></View>}<View style={s.online}/></View>
      <Text style={s.name}>{p.full_name}</Text><Text style={s.handle}>@{(p.full_name||'workit').toLowerCase().replace(/\s+/g,'')}</Text>
