@@ -24,6 +24,7 @@ export async function api(path: string, opts: RequestInit = {}) {
 export const getFeed      = (cursor?: string) => api(`/posts/feed${cursor ? `?cursor=${cursor}` : ''}`);
 export const likePost     = (id: string) => api(`/posts/${id}/like`, { method: 'POST' });
 export const getMe        = () => api('/profiles/me');
+export const getProfile   = (username: string) => api(`/profiles/${encodeURIComponent(username)}`);
 export const getUploadUrl = () => api('/videos/upload-url', { method: 'POST' });
 
 export const searchTalent = (params: { query?: string; profession?: string; skill?: string; location?: string; country?: string; available?: boolean; limit?: number } = {}) => {
@@ -35,6 +36,8 @@ export const getJobs = (params: { remote?: boolean; job_type?: string; country?:
   const qs = Object.entries(params).filter(([,v]) => v !== undefined && v !== '' && v !== false).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
   return api(`/jobs${qs ? `?${qs}` : ''}`);
 };
+export const getJob = (jobId: string) => api(`/jobs/${jobId}`);
+export const createJob = (payload: any) => api('/jobs', { method: 'POST', body: JSON.stringify(payload) });
 export const getMyJobs = () => api('/jobs/mine');
 export const applyToJob = (jobId: string, payload: any = {}) => api(`/jobs/${jobId}/apply`, { method: 'POST', body: JSON.stringify(payload) });
 export const getMyApplications = () => api('/applications/mine');
