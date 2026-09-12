@@ -15,6 +15,7 @@ export default function SettingsScreen({navigation,route}:any){
      <Row title="Edit professional identity" subtitle="Qualifications, certifications, tools, skills and availability" onPress={()=>navigation.navigate('EditProfile')}/>
      <Row title="My Applications" subtitle="Track roles from application to offer" onPress={()=>navigation.getParent()?.navigate('MyApplications')}/>
      <Row title="My Orders" subtitle="Bookings, services, products and delivery status" onPress={()=>navigation.getParent()?.navigate('MyOrders')}/>
+     <Row title="Saved" subtitle="Your shortlist of services, products and experts" onPress={()=>navigation.getParent()?.navigate('Saved')}/>
      <Row title="Hiring pipeline" subtitle="Jobs, candidates, interviews and offers" onPress={()=>navigation.navigate('Hiring')}/>
      <Row title="Earnings" subtitle="Revenue, platform fees and payouts" onPress={()=>navigation.navigate('Earnings')}/>
    </View>
