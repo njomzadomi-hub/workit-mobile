@@ -31,6 +31,13 @@ export const searchTalent = (params: { query?: string; profession?: string; skil
   return api(`/profiles/search${qs ? `?${qs}` : ''}`);
 };
 
+export const getJobs = (params: { remote?: boolean; job_type?: string; country?: string; cursor?: string; limit?: number } = {}) => {
+  const qs = Object.entries(params).filter(([,v]) => v !== undefined && v !== '' && v !== false).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
+  return api(`/jobs${qs ? `?${qs}` : ''}`);
+};
+export const applyToJob = (jobId: string, payload: any = {}) => api(`/jobs/${jobId}/apply`, { method: 'POST', body: JSON.stringify(payload) });
+export const getMyApplications = () => api('/applications/mine');
+
 export const getMarket = (params: { type?: string; country?: string; q?: string; cursor?: string } = {}) => {
   const qs = Object.entries(params).filter(([,v]) => v).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
   return api(`/market${qs ? `?${qs}` : ''}`);
@@ -44,3 +51,4 @@ export const getProfileReviews = (profileId: string) => api(`/reviews/profile/${
 export const createReview = (payload: any) => api('/reviews', { method: 'POST', body: JSON.stringify(payload) });
 export const getRevenuePlans = () => api('/revenue/plans');
 export const getEarnings = () => api('/revenue/earnings');
+export const submitReport = (payload: any) => api('/reports', { method: 'POST', body: JSON.stringify(payload) });
