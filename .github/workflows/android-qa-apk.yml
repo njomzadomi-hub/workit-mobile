@@ -1,0 +1,52 @@
+name: Android QA APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/workit-world-bazaar]
+    paths:
+      - 'App.tsx'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - '.github/workflows/android-qa-apk.yml'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      EXPO_PUBLIC_SUPABASE_URL: 'https://jzhsucsudpkihnvlylqj.supabase.co'
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_SArGeVyPr-N0BUK3gHnlKA_ByT1xt6u'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload WORKIT QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: workit-android-qa
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
