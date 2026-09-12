@@ -17,7 +17,7 @@ export default function HiringScreen({ navigation }: any) {
   useEffect(()=>{loadJobs()},[]);
 
   const move=async(id:string,status:string)=>{await setApplicationStatus(id,status);setApps(p=>p.map(a=>a.id===id?{...a,status}:a))};
-  const message=async(applicant:any)=>{const c=await openConversation(applicant.id);navigation.navigate('Inbox',{screen:'Chat',params:{conversationId:c.id,other:applicant}})};
+  const message=async(applicant:any)=>{const c=await openConversation(applicant.id);navigation.navigate('Chat',{conversationId:c.id,other:applicant})};
   const visible=apps.filter(a=>(a.status||'new')===stage);
 
   return <ScrollView style={s.page} contentContainerStyle={s.content}>
