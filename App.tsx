@@ -25,6 +25,7 @@ import JobDetailScreen from './src/screens/JobDetailScreen';
 import ProfessionalScreen from './src/screens/ProfessionalScreen';
 import GlobalSearchScreen from './src/screens/GlobalSearchScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import CommentsScreen from './src/screens/CommentsScreen';
 
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -72,6 +73,7 @@ function LoggedInApp(){
    <AppStack.Screen name="MainTabs" component={Tabs}/>
    <AppStack.Screen name="GlobalSearch" component={GlobalSearchScreen}/>
    <AppStack.Screen name="Notifications" component={NotificationsScreen}/>
+   <AppStack.Screen name="Comments" component={CommentsScreen}/>
    <AppStack.Screen name="Inbox" component={InboxScreen}/>
    <AppStack.Screen name="Chat" component={ChatScreen}/>
    <AppStack.Screen name="MarketDetail" component={MarketDetailScreen}/>
