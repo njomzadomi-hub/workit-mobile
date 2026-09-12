@@ -1,5 +1,9 @@
+const required = (value: string | undefined, name: string) => value?.trim() || `__MISSING_${name}__`;
+
 export const CONFIG = {
-  supabaseUrl: 'https://jzhsucsudpkihnvlylqj.supabase.co',
-  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6aHN1Y3N1ZHBraWhudmx5bHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzMzMTksImV4cCI6MjA5ODcwOTMxOX0.3WfMm_aMjpoQrzN1-5YvrNqEjBkImdIXKW5RFs0dOg8',
-  apiUrl: 'https://workit-api-production.up.railway.app/v1',
+  supabaseUrl: required(process.env.EXPO_PUBLIC_SUPABASE_URL, 'SUPABASE_URL'),
+  supabasePublishableKey: required(process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY, 'SUPABASE_PUBLISHABLE_KEY'),
+  apiUrl: required(process.env.EXPO_PUBLIC_API_URL, 'API_URL'),
 };
+
+export const CONFIG_READY = !Object.values(CONFIG).some(v => v.startsWith('__MISSING_'));
