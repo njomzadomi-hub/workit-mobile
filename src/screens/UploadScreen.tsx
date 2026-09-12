@@ -16,7 +16,7 @@ export default function UploadScreen(){
    <View style={s.preview}><Text style={[s.previewType,{color:meta.accent}]}>{meta.label}</Text><Text style={s.previewTitle}>{title||'Your work headline'}</Text><Text style={s.previewBody}>{desc||'Tell people what you do, what you are offering, and why they should care.'}</Text><View style={[s.previewCta,{backgroundColor:meta.accent}]}><Text style={s.previewCtaTxt}>{meta.cta} →</Text></View></View>
    <Text style={s.label}>Headline</Text><TextInput style={s.input} placeholder="e.g. I build custom oak kitchens in Pristina" placeholderTextColor={C.faint} value={title} onChangeText={setTitle}/>
    <Text style={s.label}>Context</Text><TextInput style={[s.input,s.area]} placeholder="What is happening in this video? Add proof, price, availability or outcome." placeholderTextColor={C.faint} multiline value={desc} onChangeText={setDesc}/>
-   <TouchableOpacity style={[s.publish,{backgroundColor:meta.accent,opacity:(busy||!title.trim())?.6:1}]} onPress={pickAndUpload} disabled={busy||!title.trim()}>{busy?<ActivityIndicator color="#050505"/>:<><Text style={s.publishTxt}>Choose video & publish</Text><Text style={s.publishArrow}>↗</Text></>}</TouchableOpacity>
+   <TouchableOpacity style={[s.publish,{backgroundColor:meta.accent,opacity:(busy||!title.trim()) ? 0.6 : 1}]} onPress={pickAndUpload} disabled={busy||!title.trim()}>{busy?<ActivityIndicator color="#050505"/>:<><Text style={s.publishTxt}>Choose video & publish</Text><Text style={s.publishArrow}>↗</Text></>}</TouchableOpacity>
    {!!msg&&<Text style={s.msg}>{msg}</Text>}
  </ScrollView>
 }
