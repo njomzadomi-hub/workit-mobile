@@ -35,8 +35,11 @@ export const getJobs = (params: { remote?: boolean; job_type?: string; country?:
   const qs = Object.entries(params).filter(([,v]) => v !== undefined && v !== '' && v !== false).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
   return api(`/jobs${qs ? `?${qs}` : ''}`);
 };
+export const getMyJobs = () => api('/jobs/mine');
 export const applyToJob = (jobId: string, payload: any = {}) => api(`/jobs/${jobId}/apply`, { method: 'POST', body: JSON.stringify(payload) });
 export const getMyApplications = () => api('/applications/mine');
+export const getJobApplications = (jobId: string) => api(`/jobs/${jobId}/applications`);
+export const setApplicationStatus = (applicationId: string, status: string) => api(`/applications/${applicationId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
 
 export const getMarket = (params: { type?: string; country?: string; q?: string; cursor?: string } = {}) => {
   const qs = Object.entries(params).filter(([,v]) => v).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
