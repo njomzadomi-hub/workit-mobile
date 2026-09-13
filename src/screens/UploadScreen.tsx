@@ -12,7 +12,7 @@ const secondary=['service','product','teach','pitch','donate'];
 const jobTypes=['full_time','part_time','temporary','seasonal','internship'];
 const MAX_VIDEO_BYTES=100*1024*1024;
 
-export default function UploadScreen(){
+export default function UploadScreen({navigation}:any){
  const[title,setTitle]=useState('');const[desc,setDesc]=useState('');const[type,setType]=useState('hire_me');const[profession,setProfession]=useState('');const[price,setPrice]=useState('');const[company,setCompany]=useState('');const[jobType,setJobType]=useState('full_time');const[remote,setRemote]=useState(false);const[busy,setBusy]=useState(false);const[msg,setMsg]=useState('');
  useEffect(()=>{getMe().then((p:any)=>{if(p?.title)setProfession(p.title)}).catch(()=>{})},[]);
  const meta=postMeta[type]||postMeta.video;const cfg=useMemo(()=>getProfessionProfile(profession),[profession]);const marketType=['service','product','teach'].includes(type);const isJob=type==='job';const needsProfession=!isJob;const canPublish=useMemo(()=>!!title.trim()&&(!needsProfession||!!profession.trim())&&(!isJob||!!company.trim()),[title,profession,company,needsProfession,isJob]);
@@ -43,6 +43,7 @@ export default function UploadScreen(){
     setMsg(type==='hire_me'?'Pitch published to WORKIT Feed.':'Published to WORKIT Feed.');
    }
    setTitle('');setDesc('');setPrice('');setCompany('');
+   setTimeout(()=>navigation.navigate('Feed'),350);
   }catch(e:any){setMsg('Publish failed: '+(e?.message||'Please try again.'))}finally{setBusy(false)}
  };
 
