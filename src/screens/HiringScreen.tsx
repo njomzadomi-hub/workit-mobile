@@ -1,45 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { getJobApplications, getMyJobs, setApplicationStatus, openConversation } from '../lib/api';
-import { C, R } from '../lib/theme';
+import React,{useEffect,useState}from'react';
+import{View,Text,ScrollView,TouchableOpacity,StyleSheet,Image}from'react-native';
+import{getJobApplications,getMyJobs,setApplicationStatus,openConversation}from'../lib/api';
+import{C,R}from'../lib/theme';
 
-const stages = ['new','reviewed','shortlisted','interview','offer','hired'];
+const stages=['new','reviewed','shortlisted','interview','offer','hired'];
 
-export default function HiringScreen({ navigation }: any) {
-  const [jobs,setJobs]=useState<any[]>([]);
-  const [selected,setSelected]=useState<any>(null);
-  const [apps,setApps]=useState<any[]>([]);
-  const [stage,setStage]=useState('new');
-  const [loading,setLoading]=useState(true);
-
-  const loadJobs=async()=>{try{const r=await getMyJobs();const list=r.items||[];setJobs(list);if(list[0]){setSelected(list[0]);await loadApps(list[0].id)}}finally{setLoading(false)}};
-  const loadApps=async(id:string)=>{try{const r=await getJobApplications(id);setApps(Array.isArray(r)?r:r.items||[])}catch{setApps([])}};
-  useEffect(()=>{loadJobs()},[]);
-
-  const move=async(id:string,status:string)=>{await setApplicationStatus(id,status);setApps(p=>p.map(a=>a.id===id?{...a,status}:a))};
-  const message=async(applicant:any)=>{const c=await openConversation(applicant.id);navigation.navigate('Chat',{conversationId:c.id,other:applicant})};
-  const visible=apps.filter(a=>(a.status||'new')===stage);
-
-  return <ScrollView style={s.page} contentContainerStyle={s.content}>
-    <View style={s.top}><TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹</Text></TouchableOpacity><View><Text style={s.kicker}>EMPLOYER</Text><Text style={s.h1}>Hiring pipeline</Text></View><TouchableOpacity onPress={()=>navigation.navigate('Company')} style={s.companyBtn}><Text style={s.companyIcon}>▣</Text></TouchableOpacity></View>
-    <Text style={s.sub}>Review candidates by real work, move them through the pipeline, and message them directly.</Text>
-    <TouchableOpacity onPress={()=>navigation.navigate('Company')} style={s.companyCard}><View><Text style={s.companyK}>EMPLOYER IDENTITY</Text><Text style={s.companyT}>My Company</Text><Text style={s.companyB}>Company profile, team and jobs</Text></View><Text style={s.companyArrow}>→</Text></TouchableOpacity>
-
-    <Text style={s.label}>YOUR JOBS</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.jobsRow}>
-      {jobs.map(j=><TouchableOpacity key={j.id} onPress={()=>{setSelected(j);loadApps(j.id)}} style={[s.jobChip,selected?.id===j.id&&s.jobChipOn]}><Text style={[s.jobTitle,selected?.id===j.id&&s.jobTitleOn]}>{j.title}</Text><Text style={s.jobMeta}>{j.application_count||0} applicants</Text></TouchableOpacity>)}
-    </ScrollView>
-
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.stages}>
-      {stages.map(x=><TouchableOpacity key={x} onPress={()=>setStage(x)} style={[s.stage,stage===x&&s.stageOn]}><Text style={[s.stageTxt,stage===x&&s.stageTxtOn]}>{x.toUpperCase()}</Text><Text style={s.count}>{apps.filter(a=>(a.status||'new')===x).length}</Text></TouchableOpacity>)}
-    </ScrollView>
-
-    {loading?<Text style={s.empty}>Loading hiring pipeline…</Text>:!selected?<View style={s.emptyCard}><Text style={s.emptyTitle}>No jobs yet</Text><Text style={s.empty}>Post a job from the + button and candidates will appear here.</Text></View>:visible.length===0?<View style={s.emptyCard}><Text style={s.emptyTitle}>No candidates in {stage}</Text><Text style={s.empty}>Move candidates between stages as your hiring process progresses.</Text></View>:visible.map(a=>{const p=a.applicant||{};return <View key={a.id} style={s.card}>
-      <View style={s.personRow}>{p.avatar_url?<Image source={{uri:p.avatar_url}} style={s.avatar}/>:<View style={[s.avatar,s.avatarPh]}><Text style={s.avatarLetter}>{p.full_name?.[0]||'W'}</Text></View>}<View style={s.body}><Text style={s.name}>{p.full_name||'WORKIT candidate'}</Text><Text style={s.role}>{p.title||'Professional'} {p.location?`· ${p.location}`:''}</Text><View style={s.skills}>{(p.skills||[]).slice(0,3).map((x:string)=><Text key={x} style={s.skill}>{x}</Text>)}</View></View></View>
-      {!!a.cover_note&&<Text style={s.note} numberOfLines={3}>{a.cover_note}</Text>}
-      <View style={s.actions}><TouchableOpacity style={s.secondary} onPress={()=>message(p)}><Text style={s.secondaryTxt}>Message</Text></TouchableOpacity><TouchableOpacity style={s.primary} onPress={()=>{const i=stages.indexOf(stage);if(i<stages.length-1)move(a.id,stages[i+1])}}><Text style={s.primaryTxt}>{stage==='hired'?'Hired ✓':`Move to ${stages[Math.min(stages.indexOf(stage)+1,stages.length-1)]}`}</Text></TouchableOpacity></View>
-    </View>})}
-  </ScrollView>
+export default function HiringScreen({navigation}:any){
+ const[jobs,setJobs]=useState<any[]>([]);const[selected,setSelected]=useState<any>(null);const[apps,setApps]=useState<any[]>([]);const[stage,setStage]=useState('new');const[loading,setLoading]=useState(true);
+ const app=()=>navigation.getParent()?.getParent();
+ const loadJobs=async()=>{try{const r=await getMyJobs();const list=r.items||[];setJobs(list);if(list[0]){setSelected(list[0]);await loadApps(list[0].id)}}finally{setLoading(false)}};
+ const loadApps=async(id:string)=>{try{const r=await getJobApplications(id);setApps(Array.isArray(r)?r:r.items||[])}catch{setApps([])}};
+ useEffect(()=>{void loadJobs()},[]);
+ const move=async(id:string,status:string)=>{await setApplicationStatus(id,status);setApps(p=>p.map(a=>a.id===id?{...a,status}:a))};
+ const message=async(applicant:any)=>{const c=await openConversation(applicant.id);app()?.navigate('Chat',{conversationId:c.id,other:applicant})};
+ const openCandidate=(p:any)=>p?.username&&app()?.navigate('Professional',{username:p.username,profile:p});
+ const visible=apps.filter(a=>(a.status||'new')===stage);
+ return<ScrollView style={s.page} contentContainerStyle={s.content}>
+  <View style={s.top}><TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹</Text></TouchableOpacity><View><Text style={s.kicker}>EMPLOYER</Text><Text style={s.h1}>Hiring pipeline</Text></View><TouchableOpacity onPress={()=>navigation.navigate('Company')} style={s.companyBtn}><Text style={s.companyIcon}>▣</Text></TouchableOpacity></View>
+  <Text style={s.sub}>Review candidates by real work, move them through the pipeline, and message them directly.</Text>
+  <TouchableOpacity onPress={()=>navigation.navigate('Company')} style={s.companyCard}><View><Text style={s.companyK}>EMPLOYER IDENTITY</Text><Text style={s.companyT}>My Company</Text><Text style={s.companyB}>Company profile, team and jobs</Text></View><Text style={s.companyArrow}>→</Text></TouchableOpacity>
+  <Text style={s.label}>YOUR JOBS</Text>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.jobsRow}>{jobs.map(j=><TouchableOpacity key={j.id} onPress={()=>{setSelected(j);void loadApps(j.id)}} style={[s.jobChip,selected?.id===j.id&&s.jobChipOn]}><Text style={[s.jobTitle,selected?.id===j.id&&s.jobTitleOn]}>{j.title}</Text><Text style={s.jobMeta}>{j.application_count||0} applicants</Text></TouchableOpacity>)}</ScrollView>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.stages}>{stages.map(x=><TouchableOpacity key={x} onPress={()=>setStage(x)} style={[s.stage,stage===x&&s.stageOn]}><Text style={[s.stageTxt,stage===x&&s.stageTxtOn]}>{x.toUpperCase()}</Text><Text style={s.count}>{apps.filter(a=>(a.status||'new')===x).length}</Text></TouchableOpacity>)}</ScrollView>
+  {loading?<Text style={s.empty}>Loading hiring pipeline…</Text>:!selected?<View style={s.emptyCard}><Text style={s.emptyTitle}>No jobs yet</Text><Text style={s.empty}>Post a job from the + button and candidates will appear here.</Text></View>:visible.length===0?<View style={s.emptyCard}><Text style={s.emptyTitle}>No candidates in {stage}</Text><Text style={s.empty}>Move candidates between stages as your hiring process progresses.</Text></View>:visible.map(a=>{const p=a.applicant||{};return<View key={a.id} style={s.card}>
+   <TouchableOpacity onPress={()=>openCandidate(p)} style={s.personRow} activeOpacity={.85}>{p.avatar_url?<Image source={{uri:p.avatar_url}} style={s.avatar}/>:<View style={[s.avatar,s.avatarPh]}><Text style={s.avatarLetter}>{p.full_name?.[0]||'W'}</Text></View>}<View style={s.body}><Text style={s.name}>{p.full_name||'WORKIT candidate'}</Text><Text style={s.role}>{p.title||'Professional'} {p.location?`· ${p.location}`:''}</Text><View style={s.skills}>{(p.skills||[]).slice(0,3).map((x:string)=><Text key={x} style={s.skill}>{x}</Text>)}</View></View></TouchableOpacity>
+   {!!a.cover_note&&<Text style={s.note} numberOfLines={3}>{a.cover_note}</Text>}
+   <View style={s.actions}><TouchableOpacity style={s.secondary} onPress={()=>message(p)}><Text style={s.secondaryTxt}>Message</Text></TouchableOpacity><TouchableOpacity style={s.primary} onPress={()=>{const i=stages.indexOf(stage);if(i<stages.length-1)void move(a.id,stages[i+1])}}><Text style={s.primaryTxt}>{stage==='hired'?'Hired ✓':`Move to ${stages[Math.min(stages.indexOf(stage)+1,stages.length-1)]}`}</Text></TouchableOpacity></View>
+  </View>})}
+ </ScrollView>
 }
 
 const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},content:{paddingTop:54,paddingHorizontal:18,paddingBottom:120},top:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},back:{color:C.text,fontSize:34,lineHeight:34},kicker:{color:C.blue2,fontSize:9,fontWeight:'900',letterSpacing:1.2,textAlign:'center'},h1:{color:C.text,fontSize:26,fontWeight:'900',marginTop:3},companyBtn:{width:38,height:38,borderRadius:19,borderWidth:1,borderColor:C.line,alignItems:'center',justifyContent:'center'},companyIcon:{color:C.text,fontSize:17},sub:{color:C.muted,fontSize:12,lineHeight:19,marginTop:14},companyCard:{minHeight:78,borderRadius:17,borderWidth:1,borderColor:'rgba(139,92,246,.35)',backgroundColor:'rgba(139,92,246,.08)',marginTop:15,padding:13,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},companyK:{color:C.violetSoft,fontSize:7,fontWeight:'900',letterSpacing:1},companyT:{color:C.text,fontSize:14,fontWeight:'900',marginTop:4},companyB:{color:C.muted,fontSize:8,marginTop:3},companyArrow:{color:C.text,fontSize:22},label:{color:C.faint,fontSize:9,fontWeight:'900',letterSpacing:1.1,marginTop:24,marginBottom:10},jobsRow:{gap:8},jobChip:{minWidth:170,padding:14,borderRadius:16,borderWidth:1,borderColor:C.line,backgroundColor:C.panel},jobChipOn:{borderColor:C.blue2,backgroundColor:'#11172A'},jobTitle:{color:C.text,fontSize:12,fontWeight:'900'},jobTitleOn:{color:C.blue2},jobMeta:{color:C.faint,fontSize:9,marginTop:5},stages:{gap:7,paddingVertical:18},stage:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:10,paddingVertical:7,borderRadius:R.pill,borderWidth:1,borderColor:C.line},stageOn:{backgroundColor:C.text,borderColor:C.text},stageTxt:{color:C.muted,fontSize:8,fontWeight:'900'},stageTxtOn:{color:'#000'},count:{color:C.faint,fontSize:8,fontWeight:'900'},card:{padding:15,borderRadius:20,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,marginBottom:10},personRow:{flexDirection:'row',alignItems:'center'},avatar:{width:58,height:58,borderRadius:16},avatarPh:{alignItems:'center',justifyContent:'center',backgroundColor:C.panel2},avatarLetter:{color:C.text,fontWeight:'900',fontSize:20},body:{flex:1,marginLeft:11},name:{color:C.text,fontSize:15,fontWeight:'900'},role:{color:C.muted,fontSize:10,marginTop:3},skills:{flexDirection:'row',gap:5,marginTop:7},skill:{color:C.blue2,fontSize:8,fontWeight:'800',paddingHorizontal:6,paddingVertical:3,borderRadius:6,backgroundColor:'#11172A'},note:{color:C.muted,fontSize:11,lineHeight:17,marginTop:12},actions:{flexDirection:'row',gap:8,marginTop:14},secondary:{height:42,paddingHorizontal:15,borderRadius:12,borderWidth:1,borderColor:C.line,alignItems:'center',justifyContent:'center'},secondaryTxt:{color:C.text,fontSize:10,fontWeight:'900'},primary:{flex:1,height:42,borderRadius:12,backgroundColor:C.text,alignItems:'center',justifyContent:'center',paddingHorizontal:10},primaryTxt:{color:'#000',fontSize:10,fontWeight:'900'},emptyCard:{padding:20,borderRadius:18,borderWidth:1,borderColor:C.line,backgroundColor:C.panel},emptyTitle:{color:C.text,fontSize:16,fontWeight:'900'},empty:{color:C.muted,fontSize:11,lineHeight:17,marginTop:6}});
