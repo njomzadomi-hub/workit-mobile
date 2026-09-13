@@ -7,9 +7,11 @@ export default function CompanyScreen({route,navigation}:any){
  const[org,setOrg]=useState<any>(null);const[loading,setLoading]=useState(true);const slug=route.params?.slug;const id=route.params?.id;const isPublicRoute=route.name==='CompanyPublic';
  const load=async()=>{setLoading(true);try{if(id){setOrg(await getOrganizationById(id))}else if(slug){setOrg(await getOrganization(slug))}else{const r=await getMyOrganizations();const first=r.items?.[0];if(first)setOrg(await getOrganization(first.slug));else setOrg(null)}}finally{setLoading(false)}};
  useEffect(()=>{void load()},[slug,id]);
- const openJob=(jobId:string)=>{if(!jobId)return;if(isPublicRoute)navigation.navigate('JobDetail',{jobId});else navigation.getParent()?.navigate('JobDetail',{jobId})};
+ const tabs=()=>isPublicRoute?null:navigation.getParent();
+ const app=()=>isPublicRoute?navigation:navigation.getParent()?.getParent();
+ const openJob=(jobId:string)=>{if(jobId)app()?.navigate('JobDetail',{jobId})};
  const openHiring=()=>{if(isPublicRoute)navigation.navigate('MainTabs',{screen:'Profile',params:{screen:'Hiring'}});else navigation.navigate('Hiring')};
- const openPost=()=>{if(isPublicRoute)navigation.navigate('MainTabs',{screen:'Post'});else navigation.getParent()?.navigate('MainTabs',{screen:'Post'})};
+ const openPost=()=>{if(isPublicRoute)navigation.navigate('MainTabs',{screen:'Post'});else tabs()?.navigate('Post')};
  const openSetup=(organization?:any)=>{if(isPublicRoute)navigation.navigate('MainTabs',{screen:'Profile',params:{screen:'CompanySetup',params:organization?{organization}:undefined}});else navigation.navigate('CompanySetup',organization?{organization}:undefined)};
  if(loading)return<View style={s.page}/>;
  if(!org)return<View style={s.page}><View style={s.empty}><Text style={s.wordmark}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.emptyTitle}>Create your employer identity.</Text><Text style={s.emptyBody}>Your company profile gives candidates context before they apply.</Text><TouchableOpacity onPress={()=>openSetup()} style={s.create}><Text style={s.createTxt}>Create company</Text><Text style={s.createTxt}>→</Text></TouchableOpacity></View></View>;
