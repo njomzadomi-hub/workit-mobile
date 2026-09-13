@@ -38,6 +38,7 @@ export const getJob=(jobId:string)=>edge(JOBS_API,`/jobs/${jobId}`);
 export const createJob=(payload:any)=>api('/jobs',{method:'POST',body:JSON.stringify(payload)});
 export const getMyJobs=()=>edge(JOBS_API,'/jobs/mine');
 export const applyToJob=(jobId:string,payload:any={})=>api(`/jobs/${jobId}/apply`,{method:'POST',body:JSON.stringify(payload)});
+export async function applyWithProfile(jobId:string,payload:any={}){let video_cf_uid:string|undefined;try{const me=await getMe();const work=await getProfilePosts(me.id);const pitch=(work.items||[]).find((x:any)=>x.type==='hire_me'&&x.cf_video_uid);video_cf_uid=pitch?.cf_video_uid}catch{}return applyToJob(jobId,{...payload,video_cf_uid})}
 export const getMyApplications=()=>api('/applications/mine');
 export const getJobApplications=(jobId:string)=>api(`/jobs/${jobId}/applications`);
 export const setApplicationStatus=(applicationId:string,status:string)=>api(`/applications/${applicationId}/status`,{method:'PATCH',body:JSON.stringify({status})});
