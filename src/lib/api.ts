@@ -4,12 +4,14 @@ const API = CONFIG.apiUrl;
 const PUBLISH_API = `${CONFIG.supabaseUrl}/functions/v1/workit-publish`;
 const SOCIAL_API = `${CONFIG.supabaseUrl}/functions/v1/workit-social`;
 const TALENT_API = `${CONFIG.supabaseUrl}/functions/v1/workit-talent`;
+const ORG_API = `${CONFIG.supabaseUrl}/functions/v1/workit-org`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
 async function publishApi(action:string,payload:any={}){const res=await fetch(PUBLISH_API,{method:'POST',headers:{'Content-Type':'application/json',...(await authHeader())},body:JSON.stringify({action,...payload})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Publish API ${res.status}`);return data}
 async function socialApi(path:string,opts:RequestInit={}){const res=await fetch(`${SOCIAL_API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Social API ${res.status}`);return data}
 async function talentApi(path:string){const res=await fetch(`${TALENT_API}${path}`,{headers:{'Content-Type':'application/json',...(await authHeader())}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Talent API ${res.status}`);return data}
+async function orgApi(path:string,opts:RequestInit={}){const res=await fetch(`${ORG_API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Organization API ${res.status}`);return data}
 
 export const getFeed=(cursor?:string,mode:'for_you'|'following'='for_you')=>{const q=new URLSearchParams();q.set('mode',mode);if(cursor)q.set('cursor',cursor);return socialApi(`/feed?${q.toString()}`)};
 export const getProfilePosts=(profileId:string,cursor?:string)=>socialApi(`/profile/${profileId}/posts${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
@@ -40,6 +42,11 @@ export const applyToJob=(jobId:string,payload:any={})=>api(`/jobs/${jobId}/apply
 export const getMyApplications=()=>api('/applications/mine');
 export const getJobApplications=(jobId:string)=>api(`/jobs/${jobId}/applications`);
 export const setApplicationStatus=(applicationId:string,status:string)=>api(`/applications/${applicationId}/status`,{method:'PATCH',body:JSON.stringify({status})});
+
+export const getMyOrganizations=()=>orgApi('/mine');
+export const createOrganization=(payload:any)=>orgApi('/organizations',{method:'POST',body:JSON.stringify(payload)});
+export const getOrganization=(slug:string)=>orgApi(`/organizations/slug/${encodeURIComponent(slug)}`);
+export const updateOrganization=(id:string,payload:any)=>orgApi(`/organizations/${id}`,{method:'PATCH',body:JSON.stringify(payload)});
 
 export const getMarket=(params:{type?:string;country?:string;q?:string;cursor?:string}={})=>{const qs=Object.entries(params).filter(([,v])=>v).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return api(`/market${qs?`?${qs}`:''}`)};
 export const getMarketItem=(id:string)=>api(`/market/${id}`);
