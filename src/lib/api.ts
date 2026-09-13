@@ -2,12 +2,17 @@ import { supabase } from './supabase';
 import { CONFIG } from './config';
 const API = CONFIG.apiUrl;
 const PUBLISH_API = `${CONFIG.supabaseUrl}/functions/v1/workit-publish`;
+const SOCIAL_API = `${CONFIG.supabaseUrl}/functions/v1/workit-social`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
 async function publishApi(action:string,payload:any={}){const res=await fetch(PUBLISH_API,{method:'POST',headers:{'Content-Type':'application/json',...(await authHeader())},body:JSON.stringify({action,...payload})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Publish API ${res.status}`);return data}
+async function socialApi(path:string,opts:RequestInit={}){const res=await fetch(`${SOCIAL_API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Social API ${res.status}`);return data}
 
-export const getFeed=(cursor?:string)=>api(`/posts/feed${cursor?`?cursor=${cursor}`:''}`);
+export const getFeed=(cursor?:string,mode:'for_you'|'following'='for_you')=>{const q=new URLSearchParams();q.set('mode',mode);if(cursor)q.set('cursor',cursor);return socialApi(`/feed?${q.toString()}`)};
+export const getFollowStatus=(profileId:string)=>socialApi(`/follow/${profileId}`);
+export const followProfile=(profileId:string)=>socialApi(`/follow/${profileId}`,{method:'POST'});
+export const unfollowProfile=(profileId:string)=>socialApi(`/follow/${profileId}`,{method:'DELETE'});
 export const likePost=(id:string)=>api(`/posts/${id}/like`,{method:'POST'});
 export const getComments=(id:string,cursor?:string)=>api(`/posts/${id}/comments${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
 export const addComment=(id:string,body:string)=>api(`/posts/${id}/comments`,{method:'POST',body:JSON.stringify({body})});
