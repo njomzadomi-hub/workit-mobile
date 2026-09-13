@@ -1,9 +1,11 @@
 import { supabase } from './supabase';
 import { CONFIG } from './config';
 const API = CONFIG.apiUrl;
+const PUBLISH_API = `${CONFIG.supabaseUrl}/functions/v1/workit-publish`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
+async function publishApi(action:string,payload:any={}){const res=await fetch(PUBLISH_API,{method:'POST',headers:{'Content-Type':'application/json',...(await authHeader())},body:JSON.stringify({action,...payload})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`Publish API ${res.status}`);return data}
 
 export const getFeed=(cursor?:string)=>api(`/posts/feed${cursor?`?cursor=${cursor}`:''}`);
 export const likePost=(id:string)=>api(`/posts/${id}/like`,{method:'POST'});
@@ -15,7 +17,11 @@ export const getPreferences=()=>api('/profiles/me/preferences');
 export const requestAccountDeletion=(reason?:string)=>api('/profiles/me/deletion-request',{method:'POST',body:JSON.stringify({reason})});
 export const cancelAccountDeletion=()=>api('/profiles/me/deletion-request',{method:'DELETE'});
 export const getProfile=(username:string)=>api(`/profiles/${encodeURIComponent(username)}`);
-export const getUploadUrl=()=>api('/videos/upload-url',{method:'POST'});
+
+export const getUploadUrl=(contentType='video/mp4')=>publishApi('upload-url',{content_type:contentType});
+export const publishPost=(payload:any)=>publishApi('create-post',payload);
+export const publishJob=(payload:any)=>publishApi('create-job',payload);
+export const publishMarketItem=(payload:any)=>publishApi('create-market',payload);
 
 export const searchTalent=(params:{query?:string;profession?:string;skill?:string;location?:string;country?:string;available?:boolean;limit?:number}={})=>{const qs=Object.entries(params).filter(([,v])=>v!==undefined&&v!==''&&v!==false).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return api(`/profiles/search${qs?`?${qs}`:''}`)};
 export const getJobs=(params:{remote?:boolean;job_type?:string;country?:string;cursor?:string;limit?:number}={})=>{const qs=Object.entries(params).filter(([,v])=>v!==undefined&&v!==''&&v!==false).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return api(`/jobs${qs?`?${qs}`:''}`)};
