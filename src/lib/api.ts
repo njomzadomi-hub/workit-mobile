@@ -46,6 +46,7 @@ export const setApplicationStatus=(applicationId:string,status:string)=>api(`/ap
 export const getMyOrganizations=()=>orgApi('/mine');
 export const createOrganization=(payload:any)=>orgApi('/organizations',{method:'POST',body:JSON.stringify(payload)});
 export const getOrganization=(slug:string)=>orgApi(`/organizations/slug/${encodeURIComponent(slug)}`);
+export const getOrganizationById=(id:string)=>orgApi(`/organizations/id/${id}`);
 export const updateOrganization=(id:string,payload:any)=>orgApi(`/organizations/${id}`,{method:'PATCH',body:JSON.stringify(payload)});
 
 export const getMarket=(params:{type?:string;country?:string;q?:string;cursor?:string}={})=>{const qs=Object.entries(params).filter(([,v])=>v).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return api(`/market${qs?`?${qs}`:''}`)};
