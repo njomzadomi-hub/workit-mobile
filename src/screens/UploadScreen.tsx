@@ -1,18 +1,51 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{ActivityIndicator,ScrollView,StyleSheet,Switch,Text,TextInput,TouchableOpacity,View}from'react-native';
 import*as ImagePicker from'expo-image-picker';
-import{api,createJob,createMarketItem,getMe,getUploadUrl}from'../lib/api';
+import{File}from'expo-file-system';
+import{getMe,getUploadUrl,publishJob,publishMarketItem,publishPost}from'../lib/api';
+import{supabase}from'../lib/supabase';
 import{C,F,R,S,postMeta}from'../lib/theme';
 import{getProfessionProfile}from'../lib/professionProfile';
 
 const primary=['hire_me','video','job'];
 const secondary=['service','product','teach','pitch','donate'];
-const jobTypes=['full_time','part_time','internship','temporary'];
+const jobTypes=['full_time','part_time','temporary','seasonal','internship'];
+const MAX_VIDEO_BYTES=100*1024*1024;
+
 export default function UploadScreen(){
  const[title,setTitle]=useState('');const[desc,setDesc]=useState('');const[type,setType]=useState('hire_me');const[profession,setProfession]=useState('');const[price,setPrice]=useState('');const[company,setCompany]=useState('');const[jobType,setJobType]=useState('full_time');const[remote,setRemote]=useState(false);const[busy,setBusy]=useState(false);const[msg,setMsg]=useState('');
  useEffect(()=>{getMe().then((p:any)=>{if(p?.title)setProfession(p.title)}).catch(()=>{})},[]);
  const meta=postMeta[type]||postMeta.video;const cfg=useMemo(()=>getProfessionProfile(profession),[profession]);const marketType=['service','product','teach'].includes(type);const isJob=type==='job';const needsProfession=!isJob;const canPublish=useMemo(()=>!!title.trim()&&(!needsProfession||!!profession.trim())&&(!isJob||!!company.trim()),[title,profession,company,needsProfession,isJob]);
- const publish=async()=>{setMsg('');const pick=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Videos,videoMaxDuration:90});if(pick.canceled)return;setBusy(true);try{const{uploadUrl,videoUid}=await getUploadUrl();const file=pick.assets[0];const form=new FormData();form.append('file',{uri:file.uri,name:'video.mp4',type:'video/mp4'}as any);await fetch(uploadUrl,{method:'POST',body:form});const tags=profession.trim()?[profession.trim()]:[];if(isJob){await createJob({title:title.trim(),description:desc.trim()||null,company_name:company.trim(),job_type:jobType,is_remote:remote,tags,requirements:tags,cf_video_uid:videoUid});setMsg('Job published.')}else if(marketType){await createMarketItem({type,title:title.trim(),description:desc.trim()||null,price_amount:price?Number(price):null,currency:'EUR',is_remote:remote,tags,cf_video_uid:videoUid,create_post:true,metadata:{profession:profession.trim()||null}});setMsg('Published to Feed + Market.')}else{await api('/posts',{method:'POST',body:JSON.stringify({type,title:title.trim(),description:desc.trim()||null,cf_video_uid:videoUid,tags})});setMsg('Published to Feed.')}setTitle('');setDesc('');setPrice('');setCompany('')}catch(e:any){setMsg('Publish failed: '+e.message)}finally{setBusy(false)}};
+
+ const publish=async()=>{
+  setMsg('');
+  const pick=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Videos,videoMaxDuration:90,quality:1});
+  if(pick.canceled)return;
+  const asset=pick.assets[0];
+  if(asset.fileSize&&asset.fileSize>MAX_VIDEO_BYTES){setMsg('Publish failed: video must be under 100 MB.');return}
+  setBusy(true);
+  try{
+   const contentType=asset.mimeType||'video/mp4';
+   const slot=await getUploadUrl(contentType);
+   const file=new File(asset.uri);
+   const bytes=await file.arrayBuffer();
+   const{error:uploadError}=await supabase.storage.from('workit-videos').uploadToSignedUrl(slot.path,slot.token,bytes,{contentType,upsert:false});
+   if(uploadError)throw uploadError;
+   const tags=profession.trim()?[profession.trim()]:[];
+   if(isJob){
+    await publishJob({title:title.trim(),description:desc.trim()||null,company_name:company.trim(),job_type:jobType,is_remote:remote,tags,requirements:tags,video_path:slot.path});
+    setMsg('Job published to Feed + Find Jobs.');
+   }else if(marketType){
+    await publishMarketItem({type,title:title.trim(),description:desc.trim()||null,price_amount:price?Number(price):null,currency:'EUR',is_remote:remote,tags,video_path:slot.path,create_post:true,metadata:{profession:profession.trim()||null}});
+    setMsg('Published to Feed + Market.');
+   }else{
+    await publishPost({type,title:title.trim(),description:desc.trim()||null,video_path:slot.path,tags});
+    setMsg(type==='hire_me'?'Pitch published to WORKIT Feed.':'Published to WORKIT Feed.');
+   }
+   setTitle('');setDesc('');setPrice('');setCompany('');
+  }catch(e:any){setMsg('Publish failed: '+(e?.message||'Please try again.'))}finally{setBusy(false)}
+ };
+
  const choose=(t:string)=>{setType(t);setTitle('');setDesc('')};
  return<ScrollView style={s.page} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
   <View style={s.brand}><Text style={s.wordmark}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.tagline}>SHOW YOURSELF. SHOW YOUR WORK.</Text></View>
@@ -30,7 +63,7 @@ export default function UploadScreen(){
 
   <View style={s.form}>{!isJob&&<Input l="Profession" v={profession} on={setProfession} ph="Your profession"/>}<Input l={type==='hire_me'?'Pitch headline':isJob?'Job title':'Headline'} v={title} on={setTitle} ph={placeholderTitle(type,profession)}/><Input l="Short context" v={desc} on={setDesc} area ph={placeholderBody(type,cfg.pitchHint)}/>{marketType&&<><Input l="Price / starting price (€)" v={price} on={setPrice} ph="45" keyboard="decimal-pad"/><Toggle t="Remote / online" b="Enable only if this can be delivered remotely." v={remote} on={setRemote}/></>}{isJob&&<><Input l="Company / employer" v={company} on={setCompany} ph="Company name"/><Text style={s.label}>Employment type</Text><View style={s.jobTypes}>{jobTypes.map(j=><TouchableOpacity key={j} onPress={()=>setJobType(j)} style={[s.jobType,jobType===j&&s.jobTypeOn]}><Text style={[s.jobTypeTxt,jobType===j&&s.jobTypeTxtOn]}>{j.replace('_',' ')}</Text></TouchableOpacity>)}</View><Toggle t="Remote" b="Leave off for an on-site role." v={remote} on={setRemote}/></>}</View>
 
-  <TouchableOpacity disabled={busy||!canPublish} onPress={publish} style={[s.publish,{opacity:(busy||!canPublish)?.5:1}]}>{busy?<ActivityIndicator color="#fff"/>:<><View><Text style={s.publishK}>VIDEO</Text><Text style={s.publishTxt}>Choose clip & publish</Text></View><Text style={s.publishArrow}>→</Text></>}</TouchableOpacity>{!!msg&&<Text style={[s.msg,msg.startsWith('Publish failed')&&{color:C.red}]}>{msg}</Text>}
+  <TouchableOpacity disabled={busy||!canPublish} onPress={publish} style={[s.publish,{opacity:(busy||!canPublish)?.5:1}]}>{busy?<ActivityIndicator color="#fff"/>:<><View><Text style={s.publishK}>VIDEO · MAX 90 SEC</Text><Text style={s.publishTxt}>Choose clip & publish</Text></View><Text style={s.publishArrow}>→</Text></>}</TouchableOpacity>{!!msg&&<Text style={[s.msg,msg.startsWith('Publish failed')&&{color:C.red}]}>{msg}</Text>}
  </ScrollView>}
 const BigAction=({icon,title,sub,active,on}:any)=><TouchableOpacity onPress={on} style={[s.big,active&&s.bigOn]}><Text style={[s.bigIcon,active&&s.bigIconOn]}>{icon}</Text><Text style={[s.bigTitle,active&&s.bigTitleOn]}>{title}</Text><Text style={s.bigSub}>{sub}</Text></TouchableOpacity>;
 const placeholderTitle=(t:string,p:string)=>t==='hire_me'?`Meet ${p||'me'}`:t==='video'?`${p||'My'} work`:t==='job'?'Who are you hiring?':'What are you offering?';
