@@ -10,7 +10,6 @@ const JOBS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-jobs`;
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
 async function edge(base:string,path:string,opts:RequestInit={}){const res=await fetch(`${base}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data?.error||`API ${res.status}`);return data}
-async function publishApi(action:string,payload:any={})=>{};
 async function publishCall(action:string,payload:any={}){return edge(PUBLISH_API,'',{method:'POST',body:JSON.stringify({action,...payload})})}
 
 export const getFeed=(cursor?:string,mode:'for_you'|'following'='for_you')=>{const q=new URLSearchParams();q.set('mode',mode);if(cursor)q.set('cursor',cursor);return edge(SOCIAL_API,`/feed?${q.toString()}`)};
