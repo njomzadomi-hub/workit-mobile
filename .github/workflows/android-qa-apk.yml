@@ -12,6 +12,9 @@ on:
       - 'src/**'
       - '.github/workflows/android-qa-apk.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -42,9 +45,26 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload WORKIT QA APK
+      - name: Prepare stable APK name
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk WORKIT-Android-QA.apk
+
+      - name: Upload WORKIT QA artifact
         uses: actions/upload-artifact@v4
         with:
           name: workit-android-qa
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: WORKIT-Android-QA.apk
           retention-days: 14
+
+      - name: Publish stable QA release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view workit-qa-latest >/dev/null 2>&1; then
+            gh release upload workit-qa-latest WORKIT-Android-QA.apk --clobber
+          else
+            gh release create workit-qa-latest WORKIT-Android-QA.apk \
+              --title 'WORKIT Android QA' \
+              --notes 'Internal QA build for WORKIT Android testing.' \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
