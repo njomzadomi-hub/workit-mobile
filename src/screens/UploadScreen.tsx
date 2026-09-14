@@ -7,7 +7,7 @@ import{supabase}from'../lib/supabase';
 import{C,F,R,S,postMeta}from'../lib/theme';
 import{getProfessionProfile}from'../lib/professionProfile';
 
-const secondary=['service','product','teach','pitch','donate'];
+const secondary=['service','product','teach'];
 const jobTypes=['full_time','part_time','temporary','seasonal','internship'];
 const workplaces=['on_site','hybrid','remote'];
 const MAX_VIDEO_BYTES=100*1024*1024;
@@ -34,7 +34,7 @@ export default function UploadScreen({navigation}:any){
   <View><Text style={s.wordmark}>WORK<Text style={s.it}>IT</Text></Text><Text style={s.tagline}>SHOW YOURSELF. SHOW YOUR WORK.</Text></View>
   <Text style={s.h1}>What do you want people to see?</Text><Text style={s.sub}>One short video. One clear professional action.</Text>
   <View style={s.primaryRow}><Big icon="◉" title="Pitch" sub="Available for work" active={type==='hire_me'} on={()=>choose('hire_me')}/><Big icon="▶" title="Show work" sub={cfg.proofLabel} active={type==='video'} on={()=>choose('video')}/><Big icon="＋" title="Hire" sub="Post a job" active={type==='job'} on={()=>choose('job')}/></View>
-  <Text style={s.moreK}>MORE</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.moreRow}>{secondary.map(t=>{const m=postMeta[t];return<TouchableOpacity key={t} onPress={()=>choose(t)} style={[s.more,type===t&&s.moreOn]}><Text style={[s.moreTxt,type===t&&s.moreTxtOn]}>{m.label}</Text></TouchableOpacity>})}</ScrollView>
+  <Text style={s.moreK}>MARKET</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.moreRow}>{secondary.map(t=>{const m=postMeta[t];return<TouchableOpacity key={t} onPress={()=>choose(t)} style={[s.more,type===t&&s.moreOn]}><Text style={[s.moreTxt,type===t&&s.moreTxtOn]}>{m.label}</Text></TouchableOpacity>})}</ScrollView>
   <View style={s.preview}><Text style={s.previewK}>{type==='hire_me'?'VIDEO PITCH':type==='video'?'WORK PROOF':type==='job'?'ON-SITE OPPORTUNITY':meta.label}</Text><Text style={s.previewTitle}>{title||placeholderTitle(type,profession)}</Text>{isJob&&effectiveCompany?<Text style={s.previewMeta}>{effectiveCompany}{jobLocation?` · ${jobLocation}`:''}</Text>:profession&&!isJob?<Text style={s.previewMeta}>{profession}</Text>:null}<Text style={s.previewBody}>{desc||placeholderBody(type,cfg.pitchHint)}</Text></View>
   {!isJob?<View style={s.form}><Input l="Profession" v={profession} on={setProfession} ph="Your profession"/><Input l={type==='hire_me'?'Pitch headline':'Headline'} v={title} on={setTitle} ph={placeholderTitle(type,profession)}/><Input l="Short context" v={desc} on={setDesc} area ph={placeholderBody(type,cfg.pitchHint)}/>{marketType&&<><Input l="Price / starting price (€)" v={price} on={setPrice} ph="45" keyboard="decimal-pad"/><Toggle t="Remote / online" b="Enable only if this can be delivered remotely." v={remote} on={setRemote}/></>}</View>:
   <View style={s.form}>
