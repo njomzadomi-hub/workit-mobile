@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
-import { createOrder, getMarketItem, openConversation } from '../lib/api';
-import { C } from '../lib/theme';
+import React,{useEffect,useState}from'react';
+import{View,Text,ScrollView,TouchableOpacity,StyleSheet,Alert,Image}from'react-native';
+import{createOrder,getMarketItem,openConversation,sendMessage}from'../lib/api';
+import{C}from'../lib/theme';
 
 export default function MarketDetailScreen({route,navigation}:any){
- const {id}=route.params; const [item,setItem]=useState<any>(null); const [busy,setBusy]=useState(false);
+ const{id}=route.params;const[item,setItem]=useState<any>(null);const[busy,setBusy]=useState(false);
  useEffect(()=>{getMarketItem(id).then(setItem).catch(()=>Alert.alert('Could not load listing'))},[id]);
- if(!item)return <View style={s.page}/>;
+ if(!item)return<View style={s.page}/>;
  const message=async()=>{const c=await openConversation(item.seller.id);navigation.navigate('Chat',{conversationId:c.id,other:item.seller})};
- const start=async()=>{setBusy(true);try{await createOrder(item.id);Alert.alert('Order started','This order is now in your WORKIT orders. Payment collection will be enabled with the WORKIT payment rollout.')}catch{Alert.alert('Could not start order','Please try again.')}finally{setBusy(false)}};
- return <ScrollView style={s.page} contentContainerStyle={s.content}>
+ const start=async()=>{setBusy(true);try{const order=await createOrder(item.id);const c=await openConversation(item.seller.id);await sendMessage(c.id,`[WORKIT_ORDER:${order.id}] ORDER STARTED\n\n${item.title}\n${item.currency||'EUR'} ${item.price_amount!=null?Number(item.price_amount).toFixed(0):'Quote'}\n\nLet’s confirm the details here. Payment collection will be enabled with the WORKIT payment rollout.`);navigation.navigate('Chat',{conversationId:c.id,other:item.seller})}catch{Alert.alert('Could not start order','Please try again.')}finally{setBusy(false)}};
+ return<ScrollView style={s.page} contentContainerStyle={s.content}>
   <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹ Back</Text></TouchableOpacity>
   {item.media_url?<Image source={{uri:item.media_url}} style={s.hero}/>:<View style={[s.hero,s.ph]}><Text style={s.phTxt}>WORKIT</Text></View>}
   <Text style={s.type}>{String(item.type).toUpperCase()}</Text><Text style={s.h1}>{item.title}</Text>
   <Text style={s.seller}>{item.seller?.full_name||'WORKIT professional'} {item.seller?.verified?'✓':''}</Text>
-  <Text style={s.rating}>★ {Number(item.rating||0).toFixed(1)} · {item.review_count||0} verified reviews</Text>
+  <Text style={s.rating}>★ {Number(item.seller?.rating||0).toFixed(1)} · {item.seller?.review_count||0} verified reviews</Text>
   <Text style={s.desc}>{item.description||'Professional WORKIT listing.'}</Text>
   <View style={s.priceRow}><Text style={s.price}>{item.currency||'EUR'} {item.price_amount!=null?Number(item.price_amount).toFixed(0):'Quote'}</Text><Text style={s.remote}>{item.is_remote?'Remote available':'Local / on-site'}</Text></View>
   <TouchableOpacity style={s.primary} onPress={start} disabled={busy}><Text style={s.primaryTxt}>{busy?'Starting…':item.type==='teach'?'Book / start learning':item.type==='service'?'Start booking':'Start order'}</Text></TouchableOpacity>
