@@ -7,6 +7,7 @@ const TALENT_API = `${CONFIG.supabaseUrl}/functions/v1/workit-talent`;
 const ORG_API = `${CONFIG.supabaseUrl}/functions/v1/workit-org`;
 const JOBS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-jobs`;
 const HIRING_API = `${CONFIG.supabaseUrl}/functions/v1/workit-hiring`;
+const MESSAGES_API = `${CONFIG.supabaseUrl}/functions/v1/workit-messages`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
@@ -68,7 +69,7 @@ export const getRevenuePlans=()=>api('/revenue/plans');
 export const getEarnings=()=>api('/revenue/earnings');
 export const submitReport=(payload:any)=>api('/reports',{method:'POST',body:JSON.stringify(payload)});
 
-export const getConversations=()=>api('/messages/conversations');
+export const getConversations=()=>edge(MESSAGES_API,'/conversations');
 export const openConversation=(otherId:string)=>api(`/messages/open/${otherId}`,{method:'POST'});
 export const getMessages=(conversationId:string,cursor?:string)=>api(`/messages/${conversationId}${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
 export const sendMessage=(conversationId:string,body:string)=>api(`/messages/${conversationId}`,{method:'POST',body:JSON.stringify({body})});
