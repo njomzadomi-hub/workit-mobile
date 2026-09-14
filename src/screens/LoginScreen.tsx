@@ -1,48 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { supabase } from '../lib/supabase';
+import React,{useState}from'react';
+import{ActivityIndicator,KeyboardAvoidingView,Platform,StyleSheet,Text,TextInput,TouchableOpacity,View}from'react-native';
+import{supabase}from'../lib/supabase';
+import{C,F,R,S}from'../lib/theme';
 
-export default function LoginScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const login = async () => {
-    setBusy(true); setErr('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setErr(error.message);
-    setBusy(false);
-  };
-
-  return (
-    <View style={s.wrap}>
-      <Text style={s.logo}>WORK<Text style={{ color: '#4F80FF' }}>IT</Text></Text>
-      <Text style={s.h1}>Welcome back</Text>
-      {!!err && <Text style={s.err}>{err}</Text>}
-      <TextInput style={s.input} placeholder="Email" placeholderTextColor="#555"
-        autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-      <TextInput style={s.input} placeholder="Password" placeholderTextColor="#555"
-        secureTextEntry value={password} onChangeText={setPassword} />
-      <TouchableOpacity style={s.btn} onPress={login} disabled={busy}>
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnTxt}>Log In</Text>}
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={s.link}>Don't have an account? <Text style={{ color: '#4F80FF' }}>Sign up</Text></Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#000', justifyContent: 'center', padding: 28 },
-  logo: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 28 },
-  h1: { color: '#fff', fontSize: 26, fontWeight: '700', marginBottom: 20 },
-  err: { color: '#FF6060', marginBottom: 12 },
-  input: { backgroundColor: '#111', borderWidth: 1.5, borderColor: '#1E1E1E', borderRadius: 13,
-           padding: 15, color: '#fff', fontSize: 16, marginBottom: 14 },
-  btn: { backgroundColor: '#4F80FF', height: 52, borderRadius: 13,
-         justifyContent: 'center', alignItems: 'center', marginTop: 6 },
-  btnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  link: { color: '#888', textAlign: 'center', marginTop: 22 },
-});
+export default function LoginScreen({navigation}:any){
+ const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[err,setErr]=useState('');const[busy,setBusy]=useState(false);
+ const login=async()=>{const clean=email.trim().toLowerCase();if(!clean||!password){setErr('Enter your email and password.');return}setBusy(true);setErr('');try{const{error}=await supabase.auth.signInWithPassword({email:clean,password});if(error)setErr(error.message)}catch{setErr('Could not connect to WORKIT. Check your connection and try again.')}finally{setBusy(false)}};
+ return<KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.page}><View style={s.wrap}>
+  <Text style={s.logo}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.tag}>THE WORLD’S BIGGEST WORK BAZAAR</Text>
+  <View style={s.hero}><Text style={s.kicker}>WELCOME BACK</Text><Text style={s.h1}>Your work is{`\n`}your identity.</Text><Text style={s.sub}>Log in to discover people, show your work and make opportunities happen.</Text></View>
+  {!!err&&<View style={s.notice}><Text style={s.noticeTxt}>{err}</Text></View>}
+  <Text style={s.label}>Email</Text><TextInput style={s.input} placeholder="you@example.com" placeholderTextColor={C.faint} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" value={email} onChangeText={setEmail}/>
+  <Text style={s.label}>Password</Text><TextInput style={s.input} placeholder="Your password" placeholderTextColor={C.faint} secureTextEntry textContentType="password" value={password} onChangeText={setPassword} onSubmitEditing={()=>void login()}/>
+  <TouchableOpacity style={[s.btn,busy&&s.disabled]} onPress={()=>void login()} disabled={busy}>{busy?<ActivityIndicator color="#fff"/>:<><Text style={s.btnTxt}>Enter WORKIT</Text><Text style={s.arrow}>→</Text></>}</TouchableOpacity>
+  <TouchableOpacity onPress={()=>navigation.navigate('Register')}><Text style={s.link}>New to WORKIT? <Text style={s.linkOn}>Create your profile</Text></Text></TouchableOpacity>
+ </View></KeyboardAvoidingView>}
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},wrap:{flex:1,justifyContent:'center',paddingHorizontal:26,paddingTop:S.top,paddingBottom:30},logo:{color:C.text,fontFamily:F.body,fontSize:36,fontWeight:'900',letterSpacing:-1.6},tag:{color:C.muted,fontSize:7,fontWeight:'900',letterSpacing:1.7,marginTop:-1},hero:{marginTop:42,marginBottom:22},kicker:{color:C.violetSoft,fontSize:9,fontWeight:'900',letterSpacing:1.4},h1:{color:C.text,fontSize:37,lineHeight:40,fontWeight:'900',letterSpacing:-1.6,marginTop:8},sub:{color:C.muted,fontSize:13,lineHeight:20,marginTop:10,maxWidth:330},notice:{borderWidth:1,borderColor:'#5B2940',backgroundColor:'#21111A',borderRadius:R.md,padding:12,marginBottom:14},noticeTxt:{color:'#FF9DBA',fontSize:11,lineHeight:17,fontWeight:'700'},label:{color:C.text,fontSize:10,fontWeight:'900',marginBottom:7,marginTop:10},input:{backgroundColor:C.panel,borderWidth:1,borderColor:C.lineSoft,borderRadius:16,paddingHorizontal:15,paddingVertical:14,color:C.text,fontSize:14},btn:{height:54,borderRadius:16,backgroundColor:C.violet,marginTop:20,paddingHorizontal:18,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},disabled:{opacity:.55},btnTxt:{color:'#fff',fontSize:12,fontWeight:'900'},arrow:{color:'#fff',fontSize:18,fontWeight:'900'},link:{color:C.muted,textAlign:'center',fontSize:11,marginTop:22},linkOn:{color:C.violetSoft,fontWeight:'900'}});
