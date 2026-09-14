@@ -1,6 +1,6 @@
-import React,{useMemo,useState}from'react';
+import React,{useEffect,useMemo,useState}from'react';
 import{Alert,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View}from'react-native';
-import{updateMe}from'../lib/api';
+import{getMe,updateMe}from'../lib/api';
 import{C,F,R,S}from'../lib/theme';
 import{getProfessionProfile}from'../lib/professionProfile';
 
@@ -8,6 +8,7 @@ const split=(v:string)=>v.split(',').map(x=>x.trim()).filter(Boolean);
 const professions=['Electrician','Welder','Architect','Nurse','Chef','Barber','Dancer','Teacher','Designer','Developer','Driver'];
 export default function OnboardingScreen({onDone}:any){
  const[step,setStep]=useState(0);const[busy,setBusy]=useState(false);const[fullName,setFullName]=useState('');const[title,setTitle]=useState('');const[location,setLocation]=useState('');const[skills,setSkills]=useState('');const[tools,setTools]=useState('');const[bio,setBio]=useState('');
+ useEffect(()=>{let alive=true;getMe().then((p:any)=>{if(!alive||!p)return;setFullName(x=>x||p.full_name||'');setTitle(x=>x||p.title||'');setLocation(x=>x||p.location||'');setSkills(x=>x||(Array.isArray(p.skills)?p.skills.join(', '):''));setTools(x=>x||(Array.isArray(p.tools)?p.tools.join(', '):''));setBio(x=>x||p.bio||'')}).catch(()=>{});return()=>{alive=false}},[]);
  const cfg=useMemo(()=>getProfessionProfile(title),[title]);
  const canNext=useMemo(()=>step===0?!!fullName.trim()&&!!title.trim():step===1?!!skills.trim():true,[step,fullName,title,skills]);
  const finish=async()=>{setBusy(true);try{await updateMe({full_name:fullName.trim(),title:title.trim(),location:location.trim(),skills:split(skills),tools:split(tools),bio:bio.trim(),available_for_work:true,onboarding_completed:true});onDone?.()}catch{Alert.alert('Could not finish setup','Please try again.')}finally{setBusy(false)}};
