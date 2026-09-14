@@ -8,6 +8,7 @@ const ORG_API = `${CONFIG.supabaseUrl}/functions/v1/workit-org`;
 const JOBS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-jobs`;
 const HIRING_API = `${CONFIG.supabaseUrl}/functions/v1/workit-hiring`;
 const MESSAGES_API = `${CONFIG.supabaseUrl}/functions/v1/workit-messages`;
+const APPLICATIONS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-applications`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
@@ -40,7 +41,7 @@ export const getJobs=(params:{q?:string;location?:string;workplace_type?:string;
 export const getJob=(jobId:string)=>edge(JOBS_API,`/jobs/${jobId}`);
 export const createJob=(payload:any)=>api('/jobs',{method:'POST',body:JSON.stringify(payload)});
 export const getMyJobs=()=>edge(JOBS_API,'/jobs/mine');
-async function applyRaw(jobId:string,payload:any={}){return api(`/jobs/${jobId}/apply`,{method:'POST',body:JSON.stringify(payload)})}
+async function applyRaw(jobId:string,payload:any={}){return edge(APPLICATIONS_API,`/jobs/${jobId}/apply`,{method:'POST',body:JSON.stringify(payload)})}
 export async function applyToJob(jobId:string,payload:any={}){let video_cf_uid:string|undefined;try{const me=await getMe();const work=await getProfilePosts(me.id);const pitch=(work.items||[]).find((x:any)=>x.type==='hire_me'&&x.cf_video_uid);video_cf_uid=pitch?.cf_video_uid}catch{}return applyRaw(jobId,{...payload,video_cf_uid})}
 export const applyWithProfile=applyToJob;
 export const getMyApplications=()=>api('/applications/mine');
