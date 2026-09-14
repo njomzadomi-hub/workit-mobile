@@ -61,10 +61,15 @@ jobs:
         run: |
           if gh release view workit-qa-latest >/dev/null 2>&1; then
             gh release upload workit-qa-latest WORKIT-Android-QA.apk --clobber
+            gh release edit workit-qa-latest \
+              --target "$GITHUB_SHA" \
+              --title 'WORKIT Android QA' \
+              --notes "Internal QA build for WORKIT Android testing. Commit: $GITHUB_SHA" \
+              --prerelease
           else
             gh release create workit-qa-latest WORKIT-Android-QA.apk \
               --title 'WORKIT Android QA' \
-              --notes 'Internal QA build for WORKIT Android testing.' \
+              --notes "Internal QA build for WORKIT Android testing. Commit: $GITHUB_SHA" \
               --prerelease \
               --target "$GITHUB_SHA"
           fi
