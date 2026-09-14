@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState}from'react';
-import{ActivityIndicator,ScrollView,StyleSheet,Switch,Text,TextInput,TouchableOpacity,View}from'react-native';
+import{ActivityIndicator,Alert,ScrollView,StyleSheet,Switch,Text,TextInput,TouchableOpacity,View}from'react-native';
 import*as ImagePicker from'expo-image-picker';
 import{File}from'expo-file-system';
 import{getMe,getMyOrganizations,getUploadUrl,publishJob,publishMarketItem,publishPost}from'../lib/api';
@@ -19,8 +19,11 @@ export default function UploadScreen({navigation}:any){
  const choose=(t:string)=>{setType(t);setTitle('');setDesc('')};
  const chooseOrg=(org:any)=>{setSelectedOrg(org);setCompany(org?.name||'');if(org?.location)setJobLocation(org.location)};
  const publish=async()=>{
-  setMsg('');const pick=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Videos,videoMaxDuration:90,quality:1});if(pick.canceled)return;const asset=pick.assets[0];if(asset.fileSize&&asset.fileSize>MAX_VIDEO_BYTES){setMsg('Publish failed: video must be under 100 MB.');return}setBusy(true);
-  try{const contentType=asset.mimeType||'video/mp4';const slot=await getUploadUrl(contentType);const file=new File(asset.uri);const bytes=await file.arrayBuffer();const{error}=await supabase.storage.from('workit-videos').uploadToSignedUrl(slot.path,slot.token,bytes,{contentType,upsert:false});if(error)throw error;const tags=profession.trim()?[profession.trim()]:[];
+  if(busy)return;setMsg('');
+  try{
+   const permission=await ImagePicker.requestMediaLibraryPermissionsAsync();if(!permission.granted){Alert.alert('Video access needed','Allow WORKIT to access the video you choose so you can publish your pitch or work.');return}
+   const pick=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Videos,videoMaxDuration:90,quality:1});if(pick.canceled)return;const asset=pick.assets?.[0];if(!asset?.uri){setMsg('Publish failed: no video was selected.');return}if(asset.fileSize&&asset.fileSize>MAX_VIDEO_BYTES){setMsg('Publish failed: video must be under 100 MB.');return}
+   setBusy(true);const contentType=asset.mimeType||'video/mp4';const slot=await getUploadUrl(contentType);const file=new File(asset.uri);const bytes=await file.arrayBuffer();if(bytes.byteLength>MAX_VIDEO_BYTES)throw new Error('Video must be under 100 MB.');const{error}=await supabase.storage.from('workit-videos').uploadToSignedUrl(slot.path,slot.token,bytes,{contentType,upsert:false});if(error)throw error;const tags=profession.trim()?[profession.trim()]:[];
    if(isJob){await publishJob({title:title.trim(),description:desc.trim()||null,company_name:effectiveCompany,organization_id:selectedOrg?.id||null,job_type:jobType,workplace_type:workplace,is_remote:workplace==='remote',location:jobLocation.trim(),schedule:schedule.trim()||null,positions:Number(positions||1),tags,requirements:tags,video_path:slot.path});setMsg('Job published to Feed + Find Jobs.');}
    else if(marketType){await publishMarketItem({type,title:title.trim(),description:desc.trim()||null,price_amount:price?Number(price):null,currency:'EUR',is_remote:remote,tags,video_path:slot.path,create_post:true,metadata:{profession:profession.trim()||null}});setMsg('Published to Feed + Market.');}
    else{await publishPost({type,title:title.trim(),description:desc.trim()||null,video_path:slot.path,tags});setMsg(type==='hire_me'?'Pitch published to WORKIT Feed.':'Published to WORKIT Feed.');}
