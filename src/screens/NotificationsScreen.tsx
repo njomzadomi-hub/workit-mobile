@@ -2,6 +2,7 @@ import React,{useCallback,useEffect,useState}from'react';
 import{View,Text,TouchableOpacity,StyleSheet,ScrollView}from'react-native';
 import{useFocusEffect}from'@react-navigation/native';
 import{getNotifications,markAllNotificationsRead}from'../lib/api';
+import{markNotificationRead}from'../lib/notifications';
 import{C,F,R,S}from'../lib/theme';
 
 export default function NotificationsScreen({navigation}:any){
@@ -9,9 +10,10 @@ export default function NotificationsScreen({navigation}:any){
  const load=useCallback(()=>{setLoading(true);getNotifications().then(r=>setItems(r.items||r||[])).catch(()=>setItems([])).finally(()=>setLoading(false))},[]);
  useEffect(()=>{load()},[load]);useFocusEffect(useCallback(()=>{load();return()=>{}},[load]));
  const readAll=async()=>{try{await markAllNotificationsRead();setItems(p=>p.map(x=>({...x,is_read:true})))}catch{}};
+ const open=async(n:any)=>{if(!n.is_read&&n.id){setItems(p=>p.map(x=>x.id===n.id?{...x,is_read:true}:x));try{await markNotificationRead(n.id)}catch{setItems(p=>p.map(x=>x.id===n.id?{...x,is_read:false}:x))}}navigateFromNotification(n,navigation)};
  return<ScrollView style={s.page} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
   <View style={s.head}><TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹</Text></TouchableOpacity><View style={{flex:1}}><Text style={s.title}>Notifications</Text><Text style={s.sub}>Hiring, messages and work updates.</Text></View><TouchableOpacity onPress={readAll} style={s.readBtn}><Text style={s.readTxt}>Read all</Text></TouchableOpacity></View>
-  {loading?<Text style={s.empty}>Loading notifications…</Text>:items.length?items.map((n:any,i:number)=>{const unread=!n.is_read;return<TouchableOpacity key={n.id||i} style={[s.card,unread&&s.unread]} onPress={()=>navigateFromNotification(n,navigation)}><View style={[s.dot,unread&&s.dotOn]}/><View style={{flex:1}}><Text style={s.cardTitle}>{labelFor(n)}</Text><Text style={s.cardBody}>{n.body||'WORKIT update'}</Text><Text style={s.time}>{formatTime(n.created_at)}</Text></View><Text style={s.arrow}>›</Text></TouchableOpacity>}):<View style={s.emptyCard}><Text style={s.emptyTitle}>You're all caught up.</Text><Text style={s.empty}>New hiring, marketplace and account activity will appear here.</Text></View>}
+  {loading?<Text style={s.empty}>Loading notifications…</Text>:items.length?items.map((n:any,i:number)=>{const unread=!n.is_read;return<TouchableOpacity key={n.id||i} style={[s.card,unread&&s.unread]} onPress={()=>void open(n)}><View style={[s.dot,unread&&s.dotOn]}/><View style={{flex:1}}><Text style={s.cardTitle}>{labelFor(n)}</Text><Text style={s.cardBody}>{n.body||'WORKIT update'}</Text><Text style={s.time}>{formatTime(n.created_at)}</Text></View><Text style={s.arrow}>›</Text></TouchableOpacity>}):<View style={s.emptyCard}><Text style={s.emptyTitle}>You're all caught up.</Text><Text style={s.empty}>New hiring, marketplace and account activity will appear here.</Text></View>}
  </ScrollView>
 }
 function labelFor(n:any){const body=String(n.body||'').toLowerCase();if(n.type==='application'){if(body.includes('interview'))return'Interview invite';if(body.includes('offer'))return'Offer received';if(body.includes('hired'))return'You’re hired';if(body.includes('shortlisted'))return'Shortlisted';return'Application update'}return({message:'New message',order:'Order update',follow:'New follower',hire_request:'Hiring update',system:'WORKIT update'} as any)[n.type]||'WORKIT update'}
