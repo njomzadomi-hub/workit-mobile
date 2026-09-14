@@ -1,24 +1,24 @@
 import React,{useCallback,useEffect,useState}from'react';
-import{ScrollView,StyleSheet,Text,TouchableOpacity,View}from'react-native';
+import{Alert,ScrollView,StyleSheet,Text,TouchableOpacity,View}from'react-native';
 import{useFocusEffect}from'@react-navigation/native';
 import{getMyApplications,openConversation}from'../lib/api';
 import{C,F,R,S}from'../lib/theme';
 const stages=['new','reviewed','shortlisted','interview','offer','hired'];
 export default function MyApplicationsScreen({navigation}:any){
- const[items,setItems]=useState<any[]>([]);const[loading,setLoading]=useState(true);
+ const[items,setItems]=useState<any[]>([]);const[loading,setLoading]=useState(true);const[openingChat,setOpeningChat]=useState<string|null>(null);
  const load=useCallback(async()=>{setLoading(true);try{const r=await getMyApplications();setItems(r.items||r||[])}catch{setItems([])}finally{setLoading(false)}},[]);
  useEffect(()=>{void load()},[load]);useFocusEffect(useCallback(()=>{void load();return()=>{}},[load]));
  const openRole=(a:any)=>{const id=a.job_post_id||a.job?.id;if(id)navigation.navigate('JobDetail',{jobId:id})};
- const chat=async(a:any)=>{const employer=a.job?.author;if(!employer?.id)return;const c=await openConversation(employer.id);navigation.navigate('Chat',{conversationId:c.id,other:employer})};
+ const chat=async(a:any)=>{const employer=a.job?.author;if(!employer?.id)return Alert.alert('Employer unavailable','This employer profile is not available right now.');if(openingChat)return;setOpeningChat(a.id);try{const c=await openConversation(employer.id);navigation.navigate('Chat',{conversationId:c.id,other:employer})}catch{Alert.alert('Could not open conversation','Check your connection and try again.')}finally{setOpeningChat(null)}};
  return<ScrollView style={s.page} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
   <View style={s.head}><TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.wordmark}>WORK<Text style={{color:C.violet2}}>IT</Text></Text></View>
   <Text style={s.kicker}>YOUR CAREER PIPELINE</Text><Text style={s.h1}>My Applications</Text><Text style={s.sub}>Your profile and video pitch move with you through every stage.</Text>
-  {loading?<Text style={s.empty}>Loading applications…</Text>:items.length?items.map((a:any)=>{const post=a.job||{};const jd=post.job||{};const status=String(a.status||'new');const current=Math.max(0,stages.indexOf(status));const action=status==='interview'?'Open interview chat':status==='offer'?'View offer conversation':status==='hired'?'Message employer':'View role';return<View key={a.id} style={s.card}>
+  {loading?<Text style={s.empty}>Loading applications…</Text>:items.length?items.map((a:any)=>{const post=a.job||{};const jd=post.job||{};const status=String(a.status||'new');const current=Math.max(0,stages.indexOf(status));const action=status==='interview'?'Open interview chat':status==='offer'?'View offer conversation':status==='hired'?'Message employer':'View role';const chatBusy=openingChat===a.id;return<View key={a.id} style={s.card}>
    <TouchableOpacity onPress={()=>openRole(a)} activeOpacity={.85}><View style={s.top}><View style={{flex:1}}><Text style={s.company}>{jd.company_name||'WORKIT employer'}</Text><Text style={s.title}>{post.title||'Job application'}</Text></View><View style={[s.status,{borderColor:stageColor(status)}]}><Text style={[s.statusTxt,{color:stageColor(status)}]}>{status.toUpperCase()}</Text></View></View>
    <Text style={s.meta}>{jd.location||post.country_code||(jd.is_remote?'Remote':'Location not listed')}{a.created_at?` · Applied ${new Date(a.created_at).toLocaleDateString()}`:''}</Text>
    {a.video_cf_uid?<View style={s.pitch}><Text style={s.pitchIcon}>▶</Text><Text style={s.pitchTxt}>Video pitch included</Text></View>:<View style={s.pitchMissing}><Text style={s.pitchMissingTxt}>No pitch attached to this application</Text></View>}
    <View style={s.track}>{stages.map((x,i)=><View key={x} style={[s.dot,i<=current&&status!=='rejected'&&s.dotOn]}/>)}</View></TouchableOpacity>
-   <View style={s.actionRow}><TouchableOpacity onPress={()=>openRole(a)} style={s.secondary}><Text style={s.secondaryTxt}>Role</Text></TouchableOpacity><TouchableOpacity onPress={()=>['interview','offer','hired'].includes(status)?void chat(a):openRole(a)} style={s.primary}><Text style={s.primaryTxt}>{action}</Text></TouchableOpacity></View>
+   <View style={s.actionRow}><TouchableOpacity onPress={()=>openRole(a)} style={s.secondary}><Text style={s.secondaryTxt}>Role</Text></TouchableOpacity><TouchableOpacity disabled={chatBusy} onPress={()=>['interview','offer','hired'].includes(status)?void chat(a):openRole(a)} style={[s.primary,chatBusy&&{opacity:.55}]}><Text style={s.primaryTxt}>{chatBusy?'Opening…':action}</Text></TouchableOpacity></View>
   </View>}):<View style={s.emptyCard}><Text style={s.emptyT}>No applications yet.</Text><Text style={s.empty}>Find a role in Explore and apply with your WORKIT profile and video pitch.</Text><TouchableOpacity onPress={()=>navigation.navigate('MainTabs',{screen:'Explore'})} style={s.btn}><Text style={s.btnTxt}>Find jobs</Text></TouchableOpacity></View>}
  </ScrollView>}
 const stageColor=(x:string)=>x==='hired'?C.green:x==='rejected'?C.red:x==='offer'?C.gold:x==='interview'?C.blue2:C.violetSoft;
