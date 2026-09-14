@@ -74,7 +74,7 @@ export const submitReport=(payload:any)=>api('/reports',{method:'POST',body:JSON
 export const getConversations=()=>edge(MESSAGES_API,'/conversations');
 export const openConversation=(otherId:string)=>api(`/messages/open/${otherId}`,{method:'POST'});
 export const getMessages=(conversationId:string,cursor?:string)=>api(`/messages/${conversationId}${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
-export const sendMessage=(conversationId:string,body:string)=>api(`/messages/${conversationId}`,{method:'POST',body:JSON.stringify({body})});
+export const sendMessage=(conversationId:string,body:string)=>edge(MESSAGES_API,`/conversations/${conversationId}/messages`,{method:'POST',body:JSON.stringify({body})});
 export const getNotifications=()=>api('/notifications');
 export const markAllNotificationsRead=()=>api('/notifications/read-all',{method:'POST'});
 export const registerPushDevice=(pushToken:string,platform:string)=>api('/notifications/device',{method:'POST',body:JSON.stringify({push_token:pushToken,platform,provider:'expo'})});
