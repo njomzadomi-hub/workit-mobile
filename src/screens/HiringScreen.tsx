@@ -1,7 +1,7 @@
 import React,{useEffect,useState}from'react';
-import{View,Text,ScrollView,TouchableOpacity,StyleSheet,Image}from'react-native';
+import{View,Text,ScrollView,TouchableOpacity,StyleSheet,Image,Alert}from'react-native';
 import{Video,ResizeMode}from'expo-av';
-import{getJobApplications,getMyJobs,setApplicationStatus,openConversation}from'../lib/api';
+import{getJobApplications,getMyJobs,setApplicationStatus,openConversation,sendMessage}from'../lib/api';
 import{supabase}from'../lib/supabase';
 import{C,R}from'../lib/theme';
 
@@ -13,8 +13,8 @@ export default function HiringScreen({navigation}:any){
  const loadJobs=async()=>{try{const r=await getMyJobs();const list=r.items||[];setJobs(list);if(list[0]){setSelected(list[0]);await loadApps(list[0].id)}}finally{setLoading(false)}};
  const loadApps=async(id:string)=>{try{const r=await getJobApplications(id);setApps(Array.isArray(r)?r:r.items||[])}catch{setApps([])}};
  useEffect(()=>{void loadJobs()},[]);
- const move=async(id:string,status:string)=>{await setApplicationStatus(id,status);setApps(p=>p.map(a=>a.id===id?{...a,status}:a))};
  const message=async(applicant:any)=>{const c=await openConversation(applicant.id);app()?.navigate('Chat',{conversationId:c.id,other:applicant})};
+ const move=async(application:any,status:string)=>{await setApplicationStatus(application.id,status);setApps(p=>p.map(a=>a.id===application.id?{...a,status}:a));if(status==='interview'&&application.applicant?.id){try{const c=await openConversation(application.applicant.id);await sendMessage(c.id,`Interview invite · ${selected?.title||'WORKIT role'}\n\nWe’d like to speak with you about this role. Reply here with your availability and we’ll arrange the interview.`);app()?.navigate('Chat',{conversationId:c.id,other:application.applicant})}catch{Alert.alert('Interview stage updated','The candidate was moved to Interview, but the invite message could not be sent.')}}};
  const openCandidate=(p:any)=>p?.username&&app()?.navigate('Professional',{username:p.username,profile:p});
  const pitchUrl=(a:any)=>a.video_cf_uid?supabase.storage.from('workit-videos').getPublicUrl(a.video_cf_uid).data.publicUrl:null;
  const visible=apps.filter(a=>(a.status||'new')===stage);
@@ -25,11 +25,11 @@ export default function HiringScreen({navigation}:any){
   <Text style={s.label}>YOUR JOBS</Text>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.jobsRow}>{jobs.map(j=><TouchableOpacity key={j.id} onPress={()=>{setSelected(j);void loadApps(j.id)}} style={[s.jobChip,selected?.id===j.id&&s.jobChipOn]}><Text style={[s.jobTitle,selected?.id===j.id&&s.jobTitleOn]}>{j.title}</Text><Text style={s.jobMeta}>{j.application_count||0} applicants</Text></TouchableOpacity>)}</ScrollView>
   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.stages}>{stages.map(x=><TouchableOpacity key={x} onPress={()=>setStage(x)} style={[s.stage,stage===x&&s.stageOn]}><Text style={[s.stageTxt,stage===x&&s.stageTxtOn]}>{x.toUpperCase()}</Text><Text style={s.count}>{apps.filter(a=>(a.status||'new')===x).length}</Text></TouchableOpacity>)}</ScrollView>
-  {loading?<Text style={s.empty}>Loading hiring pipeline…</Text>:!selected?<View style={s.emptyCard}><Text style={s.emptyTitle}>No jobs yet</Text><Text style={s.empty}>Post a job from the + button and candidates will appear here.</Text></View>:visible.length===0?<View style={s.emptyCard}><Text style={s.emptyTitle}>No candidates in {stage}</Text><Text style={s.empty}>Move candidates between stages as your hiring process progresses.</Text></View>:visible.map(a=>{const p=a.applicant||{};const pitch=pitchUrl(a);return<View key={a.id} style={s.card}>
+  {loading?<Text style={s.empty}>Loading hiring pipeline…</Text>:!selected?<View style={s.emptyCard}><Text style={s.emptyTitle}>No jobs yet</Text><Text style={s.empty}>Post a job from the + button and candidates will appear here.</Text></View>:visible.length===0?<View style={s.emptyCard}><Text style={s.emptyTitle}>No candidates in {stage}</Text><Text style={s.empty}>Move candidates between stages as your hiring process progresses.</Text></View>:visible.map(a=>{const p=a.applicant||{};const pitch=pitchUrl(a);const next=stages[Math.min(stages.indexOf(stage)+1,stages.length-1)];return<View key={a.id} style={s.card}>
    {pitch?<View style={s.pitchWrap}><Video source={{uri:pitch}} style={s.pitchVideo} resizeMode={ResizeMode.COVER} useNativeControls shouldPlay={false}/><View style={s.pitchBadge}><Text style={s.pitchBadgeTxt}>VIDEO PITCH</Text></View></View>:null}
    <TouchableOpacity onPress={()=>openCandidate(p)} style={s.personRow} activeOpacity={.85}>{p.avatar_url?<Image source={{uri:p.avatar_url}} style={s.avatar}/>:<View style={[s.avatar,s.avatarPh]}><Text style={s.avatarLetter}>{p.full_name?.[0]||'W'}</Text></View>}<View style={s.body}><Text style={s.name}>{p.full_name||'WORKIT candidate'}</Text><Text style={s.role}>{p.title||'Professional'} {p.location?`· ${p.location}`:''}</Text><View style={s.skills}>{(p.skills||[]).slice(0,3).map((x:string)=><Text key={x} style={s.skill}>{x}</Text>)}</View></View></TouchableOpacity>
    {!!a.cover_note&&<Text style={s.note} numberOfLines={3}>{a.cover_note}</Text>}
-   <View style={s.actions}><TouchableOpacity style={s.secondary} onPress={()=>message(p)}><Text style={s.secondaryTxt}>Message</Text></TouchableOpacity><TouchableOpacity style={s.primary} onPress={()=>{const i=stages.indexOf(stage);if(i<stages.length-1)void move(a.id,stages[i+1])}}><Text style={s.primaryTxt}>{stage==='hired'?'Hired ✓':`Move to ${stages[Math.min(stages.indexOf(stage)+1,stages.length-1)]}`}</Text></TouchableOpacity></View>
+   <View style={s.actions}><TouchableOpacity style={s.secondary} onPress={()=>message(p)}><Text style={s.secondaryTxt}>Message</Text></TouchableOpacity><TouchableOpacity style={s.primary} disabled={stage==='hired'} onPress={()=>stage!=='hired'&&void move(a,next)}><Text style={s.primaryTxt}>{stage==='hired'?'Hired ✓':next==='interview'?'Invite to interview':`Move to ${next}`}</Text></TouchableOpacity></View>
   </View>})}
  </ScrollView>
 }
