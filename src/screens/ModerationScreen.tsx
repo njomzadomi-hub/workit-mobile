@@ -1,0 +1,32 @@
+import React,{useCallback,useEffect,useState}from'react';
+import{ActivityIndicator,Alert,ScrollView,StyleSheet,Text,TouchableOpacity,View}from'react-native';
+import{getAdminReports,getAdminStats,updateAdminReport}from'../lib/api';
+import{C,R,S}from'../lib/theme';
+
+const FILTERS=['open','reviewing','resolved','dismissed'] as const;
+export default function ModerationScreen({navigation}:any){
+ const[status,setStatus]=useState<(typeof FILTERS)[number]>('open');const[items,setItems]=useState<any[]>([]);const[stats,setStats]=useState<any>({});const[loading,setLoading]=useState(true);const[busy,setBusy]=useState<Record<string,boolean>>({});
+ const load=useCallback(async()=>{setLoading(true);try{const[r,s]=await Promise.all([getAdminReports(status),getAdminStats()]);setItems(r.items||[]);setStats(s||{})}catch(e:any){Alert.alert('Moderation unavailable',String(e?.message||'Could not load moderation queue.'));navigation.goBack()}finally{setLoading(false)}},[status]);
+ useEffect(()=>{void load()},[load]);
+ const setReport=async(id:string,next:'reviewing'|'resolved'|'dismissed')=>{if(busy[id])return;setBusy(p=>({...p,[id]:true}));try{await updateAdminReport(id,{status:next});await load()}catch{Alert.alert('Could not update report','Please try again.')}finally{setBusy(p=>({...p,[id]:false}))}};
+ return<ScrollView style={s.page} contentContainerStyle={s.content}>
+  <View style={s.head}><TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹ Settings</Text></TouchableOpacity><Text style={s.badge}>MODERATION</Text></View>
+  <Text style={s.h1}>Trust & Safety</Text><Text style={s.sub}>Review reports without exposing moderator controls to regular WORKIT users.</Text>
+  <View style={s.stats}><Stat n={stats.open||0} l="Open"/><Stat n={stats.reviewing||0} l="Reviewing"/><Stat n={stats.resolved||0} l="Resolved"/><Stat n={stats.dismissed||0} l="Dismissed"/></View>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filters}>{FILTERS.map(x=><TouchableOpacity key={x} onPress={()=>setStatus(x)} style={[s.filter,status===x&&s.filterOn]}><Text style={[s.filterTxt,status===x&&s.filterTxtOn]}>{x[0].toUpperCase()+x.slice(1)}</Text></TouchableOpacity>)}</ScrollView>
+  {loading?<View style={s.loading}><ActivityIndicator color={C.violetSoft}/></View>:items.length?items.map((r:any)=><View key={r.id} style={s.card}>
+   <View style={s.row}><Text style={s.type}>{String(r.target_type||'report').toUpperCase()}</Text><Text style={s.time}>{new Date(r.created_at).toLocaleString()}</Text></View>
+   <Text style={s.reason}>{String(r.reason||'other').replace(/_/g,' ')}</Text>
+   {!!r.details&&<Text style={s.details}>{r.details}</Text>}
+   <Text style={s.reporter}>Reported by {r.reporter?.full_name||r.reporter?.username||'WORKIT user'}</Text>
+   <Text style={s.target}>Target ID · {r.target_id}</Text>
+   <View style={s.actions}>
+    {r.status==='open'&&<TouchableOpacity disabled={busy[r.id]} onPress={()=>void setReport(r.id,'reviewing')} style={s.review}><Text style={s.reviewTxt}>{busy[r.id]?'Updating…':'Start review'}</Text></TouchableOpacity>}
+    {!['resolved','dismissed'].includes(r.status)&&<TouchableOpacity disabled={busy[r.id]} onPress={()=>void setReport(r.id,'resolved')} style={s.resolve}><Text style={s.resolveTxt}>Resolve</Text></TouchableOpacity>}
+    {!['resolved','dismissed'].includes(r.status)&&<TouchableOpacity disabled={busy[r.id]} onPress={()=>Alert.alert('Dismiss report','Mark this report as dismissed?',[{text:'Cancel',style:'cancel'},{text:'Dismiss',style:'destructive',onPress:()=>void setReport(r.id,'dismissed')}])} style={s.dismiss}><Text style={s.dismissTxt}>Dismiss</Text></TouchableOpacity>}
+   </View>
+  </View>):<View style={s.empty}><Text style={s.emptyTitle}>No {status} reports</Text><Text style={s.emptySub}>This queue is clear.</Text></View>}
+ </ScrollView>
+}
+const Stat=({n,l}:any)=><View style={s.stat}><Text style={s.statN}>{n}</Text><Text style={s.statL}>{l}</Text></View>;
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},content:{paddingTop:S.top,paddingHorizontal:S.pageX,paddingBottom:90},head:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},back:{color:C.violetSoft,fontSize:12,fontWeight:'800'},badge:{color:C.red,fontSize:8,fontWeight:'900',letterSpacing:1.2},h1:{color:C.text,fontSize:30,fontWeight:'900',marginTop:24},sub:{color:C.muted,fontSize:11,lineHeight:17,marginTop:7},stats:{flexDirection:'row',marginTop:18,borderWidth:1,borderColor:C.lineSoft,borderRadius:16,overflow:'hidden'},stat:{flex:1,minHeight:64,alignItems:'center',justifyContent:'center',borderRightWidth:1,borderRightColor:C.lineSoft},statN:{color:C.text,fontSize:18,fontWeight:'900'},statL:{color:C.faint,fontSize:7.5,marginTop:3},filters:{gap:7,paddingVertical:16},filter:{height:36,paddingHorizontal:13,borderRadius:R.pill,borderWidth:1,borderColor:C.line,alignItems:'center',justifyContent:'center'},filterOn:{backgroundColor:C.text,borderColor:C.text},filterTxt:{color:C.muted,fontSize:9,fontWeight:'800'},filterTxtOn:{color:C.black},loading:{paddingVertical:60},card:{borderRadius:17,borderWidth:1,borderColor:C.lineSoft,backgroundColor:C.panel,padding:13,marginBottom:10},row:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},type:{color:C.violetSoft,fontSize:8,fontWeight:'900',letterSpacing:1},time:{color:C.faint,fontSize:7.5},reason:{color:C.text,fontSize:16,fontWeight:'900',textTransform:'capitalize',marginTop:11},details:{color:C.muted,fontSize:10,lineHeight:16,marginTop:7},reporter:{color:C.muted,fontSize:9,marginTop:10},target:{color:C.faint,fontSize:7.5,marginTop:4},actions:{flexDirection:'row',gap:7,marginTop:13},review:{flex:1,height:42,borderRadius:12,backgroundColor:C.text,alignItems:'center',justifyContent:'center'},reviewTxt:{color:C.black,fontSize:9,fontWeight:'900'},resolve:{flex:1,height:42,borderRadius:12,backgroundColor:'rgba(71,226,154,.12)',borderWidth:1,borderColor:'rgba(71,226,154,.28)',alignItems:'center',justifyContent:'center'},resolveTxt:{color:C.green,fontSize:9,fontWeight:'900'},dismiss:{flex:1,height:42,borderRadius:12,borderWidth:1,borderColor:'rgba(255,75,107,.30)',alignItems:'center',justifyContent:'center'},dismissTxt:{color:C.red,fontSize:9,fontWeight:'900'},empty:{minHeight:180,alignItems:'center',justifyContent:'center',borderWidth:1,borderStyle:'dashed',borderColor:C.line,borderRadius:18,marginTop:8},emptyTitle:{color:C.text,fontSize:14,fontWeight:'900'},emptySub:{color:C.faint,fontSize:9,marginTop:5}});
