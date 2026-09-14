@@ -7,8 +7,8 @@ export default function LoginScreen({navigation}:any){
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[err,setErr]=useState('');const[busy,setBusy]=useState(false);
  const login=async()=>{const clean=email.trim().toLowerCase();if(!clean||!password){setErr('Enter your email and password.');return}setBusy(true);setErr('');try{const{error}=await supabase.auth.signInWithPassword({email:clean,password});if(error)setErr(error.message)}catch{setErr('Could not connect to WORKIT. Check your connection and try again.')}finally{setBusy(false)}};
  return<KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.page}><View style={s.wrap}>
-  <Text style={s.logo}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.tag}>THE WORLD’S BIGGEST WORK BAZAAR</Text>
-  <View style={s.hero}><Text style={s.kicker}>WELCOME BACK</Text><Text style={s.h1}>Your work is{`\n`}your identity.</Text><Text style={s.sub}>Log in to discover people, show your work and make opportunities happen.</Text></View>
+  <Text style={s.logo}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.tag}>VIDEO-FIRST HIRING</Text>
+  <View style={s.hero}><Text style={s.kicker}>WELCOME BACK</Text><Text style={s.h1}>Your work is{`\n`}your identity.</Text><Text style={s.sub}>Log in to discover people, see real work and turn human fit into opportunity.</Text></View>
   {!!err&&<View style={s.notice}><Text style={s.noticeTxt}>{err}</Text></View>}
   <Text style={s.label}>Email</Text><TextInput style={s.input} placeholder="you@example.com" placeholderTextColor={C.faint} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" value={email} onChangeText={setEmail}/>
   <Text style={s.label}>Password</Text><TextInput style={s.input} placeholder="Your password" placeholderTextColor={C.faint} secureTextEntry textContentType="password" value={password} onChangeText={setPassword} onSubmitEditing={()=>void login()}/>
