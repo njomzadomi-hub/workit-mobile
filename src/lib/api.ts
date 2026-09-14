@@ -20,8 +20,9 @@ export const getFollowStatus=(profileId:string)=>edge(SOCIAL_API,`/follow/${prof
 export const followProfile=(profileId:string)=>edge(SOCIAL_API,`/follow/${profileId}`,{method:'POST'});
 export const unfollowProfile=(profileId:string)=>edge(SOCIAL_API,`/follow/${profileId}`,{method:'DELETE'});
 export const likePost=(id:string)=>edge(SOCIAL_API,`/like/${id}`,{method:'POST'});
-export const getComments=(id:string,cursor?:string)=>api(`/posts/${id}/comments${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
-export const addComment=(id:string,body:string)=>api(`/posts/${id}/comments`,{method:'POST',body:JSON.stringify({body})});
+export const getComments=(id:string)=>edge(SOCIAL_API,`/comments/${id}`);
+export const addComment=(id:string,body:string)=>edge(SOCIAL_API,`/comments/${id}`,{method:'POST',body:JSON.stringify({body})});
+export const trackShare=(id:string)=>edge(SOCIAL_API,`/share/${id}`,{method:'POST'});
 export const getMe=()=>api('/profiles/me');
 export const updateMe=(payload:any)=>api('/profiles/me',{method:'PATCH',body:JSON.stringify(payload)});
 export const getPreferences=()=>api('/profiles/me/preferences');
