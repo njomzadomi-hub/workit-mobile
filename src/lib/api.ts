@@ -9,6 +9,7 @@ const JOBS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-jobs`;
 const HIRING_API = `${CONFIG.supabaseUrl}/functions/v1/workit-hiring`;
 const MESSAGES_API = `${CONFIG.supabaseUrl}/functions/v1/workit-messages`;
 const APPLICATIONS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-applications`;
+const ADMIN_API = `${CONFIG.supabaseUrl}/functions/v1/workit-admin`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
@@ -70,6 +71,11 @@ export const createReview=(payload:any)=>api('/reviews',{method:'POST',body:JSON
 export const getRevenuePlans=()=>api('/revenue/plans');
 export const getEarnings=()=>api('/revenue/earnings');
 export const submitReport=(payload:any)=>api('/reports',{method:'POST',body:JSON.stringify(payload)});
+
+export const getAdminStatus=()=>edge(ADMIN_API,'/health');
+export const getAdminStats=()=>edge(ADMIN_API,'/stats');
+export const getAdminReports=(status='open')=>edge(ADMIN_API,`/reports?status=${encodeURIComponent(status)}`);
+export const updateAdminReport=(id:string,payload:{status:'reviewing'|'resolved'|'dismissed';moderator_note?:string})=>edge(ADMIN_API,`/reports/${id}`,{method:'PATCH',body:JSON.stringify(payload)});
 
 export const getConversations=()=>edge(MESSAGES_API,'/conversations');
 export const openConversation=(otherId:string)=>api(`/messages/open/${otherId}`,{method:'POST'});
