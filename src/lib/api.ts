@@ -34,7 +34,7 @@ export const publishJob=(payload:any)=>publishCall('create-job',payload);
 export const publishMarketItem=(payload:any)=>publishCall('create-market',payload);
 
 export const searchTalent=(params:{query?:string;profession?:string;skill?:string;location?:string;country?:string;available?:boolean;limit?:number}={})=>{const merged={...params,query:params.query||params.skill};const qs=Object.entries(merged).filter(([,v])=>v!==undefined&&v!==''&&v!==false).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return edge(TALENT_API,`/?${qs}`)};
-export const getJobs=(params:{remote?:boolean;job_type?:string;country?:string;cursor?:string;limit?:number}={})=>{const qs=Object.entries(params).filter(([,v])=>v!==undefined&&v!==''&&v!==false).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return edge(JOBS_API,`/jobs${qs?`?${qs}`:''}`)};
+export const getJobs=(params:{q?:string;location?:string;workplace_type?:string;remote?:boolean;job_type?:string;country?:string;cursor?:string;limit?:number}={})=>{const qs=Object.entries(params).filter(([,v])=>v!==undefined&&v!==''&&v!==false).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');return edge(JOBS_API,`/jobs${qs?`?${qs}`:''}`)};
 export const getJob=(jobId:string)=>edge(JOBS_API,`/jobs/${jobId}`);
 export const createJob=(payload:any)=>api('/jobs',{method:'POST',body:JSON.stringify(payload)});
 export const getMyJobs=()=>edge(JOBS_API,'/jobs/mine');
