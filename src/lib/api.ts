@@ -45,6 +45,7 @@ export const getMyApplications=()=>api('/applications/mine');
 export const getJobApplications=(jobId:string)=>api(`/jobs/${jobId}/applications`);
 export const setApplicationStatus=(applicationId:string,status:string)=>edge(HIRING_API,`/applications/${applicationId}/status`,{method:'PATCH',body:JSON.stringify({status})});
 export const getMyWorkRelationships=()=>edge(HIRING_API,'/work/mine');
+export const getProfileWorkRelationships=(profileId:string)=>edge(HIRING_API,`/work/profile/${profileId}`);
 
 export const getMyOrganizations=()=>edge(ORG_API,'/mine');
 export const createOrganization=(payload:any)=>edge(ORG_API,'/organizations',{method:'POST',body:JSON.stringify(payload)});
