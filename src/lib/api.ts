@@ -6,6 +6,7 @@ const SOCIAL_API = `${CONFIG.supabaseUrl}/functions/v1/workit-social`;
 const TALENT_API = `${CONFIG.supabaseUrl}/functions/v1/workit-talent`;
 const ORG_API = `${CONFIG.supabaseUrl}/functions/v1/workit-org`;
 const JOBS_API = `${CONFIG.supabaseUrl}/functions/v1/workit-jobs`;
+const HIRING_API = `${CONFIG.supabaseUrl}/functions/v1/workit-hiring`;
 
 async function authHeader(){const{data}=await supabase.auth.getSession();return{Authorization:`Bearer ${data.session?.access_token??''}`}}
 export async function api(path:string,opts:RequestInit={}){const res=await fetch(`${API}${path}`,{...opts,headers:{'Content-Type':'application/json',...(await authHeader()),...(opts.headers||{})}});if(!res.ok)throw new Error(`API ${res.status}`);return res.json()}
@@ -42,7 +43,8 @@ export async function applyToJob(jobId:string,payload:any={}){let video_cf_uid:s
 export const applyWithProfile=applyToJob;
 export const getMyApplications=()=>api('/applications/mine');
 export const getJobApplications=(jobId:string)=>api(`/jobs/${jobId}/applications`);
-export const setApplicationStatus=(applicationId:string,status:string)=>api(`/applications/${applicationId}/status`,{method:'PATCH',body:JSON.stringify({status})});
+export const setApplicationStatus=(applicationId:string,status:string)=>edge(HIRING_API,`/applications/${applicationId}/status`,{method:'PATCH',body:JSON.stringify({status})});
+export const getMyWorkRelationships=()=>edge(HIRING_API,'/work/mine');
 
 export const getMyOrganizations=()=>edge(ORG_API,'/mine');
 export const createOrganization=(payload:any)=>edge(ORG_API,'/organizations',{method:'POST',body:JSON.stringify(payload)});
