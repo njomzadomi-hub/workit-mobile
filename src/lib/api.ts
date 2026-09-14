@@ -19,7 +19,7 @@ export const getProfilePosts=(profileId:string,cursor?:string)=>edge(SOCIAL_API,
 export const getFollowStatus=(profileId:string)=>edge(SOCIAL_API,`/follow/${profileId}`);
 export const followProfile=(profileId:string)=>edge(SOCIAL_API,`/follow/${profileId}`,{method:'POST'});
 export const unfollowProfile=(profileId:string)=>edge(SOCIAL_API,`/follow/${profileId}`,{method:'DELETE'});
-export const likePost=(id:string)=>api(`/posts/${id}/like`,{method:'POST'});
+export const likePost=(id:string)=>edge(SOCIAL_API,`/like/${id}`,{method:'POST'});
 export const getComments=(id:string,cursor?:string)=>api(`/posts/${id}/comments${cursor?`?cursor=${encodeURIComponent(cursor)}`:''}`);
 export const addComment=(id:string,body:string)=>api(`/posts/${id}/comments`,{method:'POST',body:JSON.stringify({body})});
 export const getMe=()=>api('/profiles/me');
