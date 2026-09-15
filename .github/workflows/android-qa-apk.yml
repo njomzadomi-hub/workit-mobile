@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: workit-android-qa-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -59,6 +63,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/branches/${GITHUB_REF_NAME}" --jq '.commit.sha')"
+          if [ "$LATEST_SHA" != "$GITHUB_SHA" ]; then
+            echo "Skipping stable QA release: build $GITHUB_SHA is stale; branch head is $LATEST_SHA"
+            exit 0
+          fi
+
           if gh release view workit-qa-latest >/dev/null 2>&1; then
             gh release upload workit-qa-latest WORKIT-Android-QA.apk --clobber
             gh release edit workit-qa-latest \
