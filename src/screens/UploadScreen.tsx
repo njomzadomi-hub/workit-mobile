@@ -1,77 +1,57 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { getUploadUrl, api } from '../lib/api';
+import React,{useEffect,useMemo,useState}from'react';
+import{ActivityIndicator,Alert,ScrollView,StyleSheet,Switch,Text,TextInput,TouchableOpacity,View}from'react-native';
+import*as ImagePicker from'expo-image-picker';
+import{File}from'expo-file-system';
+import{getMe,getMyOrganizations,getUploadUrl,publishJob,publishMarketItem,publishPost}from'../lib/api';
+import{supabase}from'../lib/supabase';
+import{C,F,R,S,postMeta}from'../lib/theme';
+import{getProfessionProfile}from'../lib/professionProfile';
 
-export default function UploadScreen() {
-  const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
-  const [type, setType] = useState('video');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
+const secondary=['service','product','teach'];
+const jobTypes=['full_time','part_time','temporary','seasonal','internship'];
+const workplaces=['on_site','hybrid','remote'];
+const MAX_VIDEO_BYTES=100*1024*1024;
 
-  const pickAndUpload = async () => {
-    setMsg('');
-    const pick = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      videoMaxDuration: 180,
-    });
-    if (pick.canceled) return;
-    setBusy(true);
-    try {
-      const { uploadUrl, videoUid } = await getUploadUrl();
-      const file = pick.assets[0];
-      const form = new FormData();
-      form.append('file', { uri: file.uri, name: 'video.mp4', type: 'video/mp4' } as any);
-      await fetch(uploadUrl, { method: 'POST', body: form });
-      await api('/posts', {
-        method: 'POST',
-        body: JSON.stringify({ type, title, description: desc, cf_video_uid: videoUid }),
-      });
-      setMsg('✓ Posted! Video is processing.');
-      setTitle(''); setDesc('');
-    } catch (e: any) {
-      setMsg('Upload failed: ' + e.message);
-    }
-    setBusy(false);
-  };
-
-  const types = ['video', 'hire_me', 'service', 'pitch', 'teach'];
-
-  return (
-    <View style={s.wrap}>
-      <Text style={s.h1}>Create</Text>
-      <View style={s.typeRow}>
-        {types.map(t => (
-          <TouchableOpacity key={t} style={[s.typePill, type === t && s.typePillOn]} onPress={() => setType(t)}>
-            <Text style={[s.typeTxt, type === t && s.typeTxtOn]}>{t.replace('_', ' ')}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <TextInput style={s.input} placeholder="Title" placeholderTextColor="#555"
-        value={title} onChangeText={setTitle} />
-      <TextInput style={[s.input, { height: 90 }]} placeholder="Description" placeholderTextColor="#555"
-        multiline value={desc} onChangeText={setDesc} />
-      <TouchableOpacity style={s.btn} onPress={pickAndUpload} disabled={busy || !title}>
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnTxt}>Pick Video & Post</Text>}
-      </TouchableOpacity>
-      {!!msg && <Text style={s.msg}>{msg}</Text>}
-    </View>
-  );
+export default function UploadScreen({navigation}:any){
+ const[title,setTitle]=useState('');const[desc,setDesc]=useState('');const[type,setType]=useState('hire_me');const[profession,setProfession]=useState('');const[price,setPrice]=useState('');const[company,setCompany]=useState('');const[organizations,setOrganizations]=useState<any[]>([]);const[selectedOrg,setSelectedOrg]=useState<any>(null);const[jobType,setJobType]=useState('full_time');const[workplace,setWorkplace]=useState('on_site');const[jobLocation,setJobLocation]=useState('');const[schedule,setSchedule]=useState('');const[positions,setPositions]=useState('1');const[remote,setRemote]=useState(false);const[busy,setBusy]=useState(false);const[msg,setMsg]=useState('');
+ useEffect(()=>{getMe().then((p:any)=>{if(p?.title)setProfession(p.title)}).catch(()=>{});getMyOrganizations().then((r:any)=>{const list=r.items||[];setOrganizations(list);if(list[0]){setSelectedOrg(list[0]);setCompany(list[0].name);setJobLocation(list[0].location||'')}}).catch(()=>{})},[]);
+ const meta=postMeta[type]||postMeta.video;const cfg=useMemo(()=>getProfessionProfile(profession),[profession]);const marketType=['service','product','teach'].includes(type);const isJob=type==='job';const effectiveCompany=selectedOrg?.name||company.trim();const canPublish=!!title.trim()&&(!isJob?!!profession.trim():!!effectiveCompany&&!!jobLocation.trim());
+ const choose=(t:string)=>{setType(t);setTitle('');setDesc('')};
+ const chooseOrg=(org:any)=>{setSelectedOrg(org);setCompany(org?.name||'');if(org?.location)setJobLocation(org.location)};
+ const publish=async()=>{
+  if(busy)return;setMsg('');
+  try{
+   const permission=await ImagePicker.requestMediaLibraryPermissionsAsync();if(!permission.granted){Alert.alert('Video access needed','Allow WORKIT to access the video you choose so you can publish your pitch or work.');return}
+   const pick=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Videos,videoMaxDuration:90,quality:1});if(pick.canceled)return;const asset=pick.assets?.[0];if(!asset?.uri){setMsg('Publish failed: no video was selected.');return}if(asset.fileSize&&asset.fileSize>MAX_VIDEO_BYTES){setMsg('Publish failed: video must be under 100 MB.');return}
+   setBusy(true);const contentType=asset.mimeType||'video/mp4';const slot=await getUploadUrl(contentType);const file=new File(asset.uri);const bytes=await file.arrayBuffer();if(bytes.byteLength>MAX_VIDEO_BYTES)throw new Error('Video must be under 100 MB.');const{error}=await supabase.storage.from('workit-videos').uploadToSignedUrl(slot.path,slot.token,bytes,{contentType,upsert:false});if(error)throw error;const tags=profession.trim()?[profession.trim()]:[];
+   if(isJob){await publishJob({title:title.trim(),description:desc.trim()||null,company_name:effectiveCompany,organization_id:selectedOrg?.id||null,job_type:jobType,workplace_type:workplace,is_remote:workplace==='remote',location:jobLocation.trim(),schedule:schedule.trim()||null,positions:Number(positions||1),tags,requirements:tags,video_path:slot.path});setMsg('Job published to Feed + Find Jobs.');}
+   else if(marketType){await publishMarketItem({type,title:title.trim(),description:desc.trim()||null,price_amount:price?Number(price):null,currency:'EUR',is_remote:remote,tags,video_path:slot.path,create_post:true,metadata:{profession:profession.trim()||null}});setMsg('Published to Feed + Market.');}
+   else{await publishPost({type,title:title.trim(),description:desc.trim()||null,video_path:slot.path,tags});setMsg(type==='hire_me'?'Pitch published to WORKIT Feed.':'Published to WORKIT Feed.');}
+   setTitle('');setDesc('');setPrice('');setTimeout(()=>navigation.navigate('Feed'),350);
+  }catch(e:any){setMsg('Publish failed: '+(e?.message||'Please try again.'))}finally{setBusy(false)}
+ };
+ return<ScrollView style={s.page} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+  <View><Text style={s.wordmark}>WORK<Text style={s.it}>IT</Text></Text><Text style={s.tagline}>SHOW YOURSELF. SHOW YOUR WORK.</Text></View>
+  <Text style={s.h1}>What do you want people to see?</Text><Text style={s.sub}>One short video. One clear professional action.</Text>
+  <View style={s.primaryRow}><Big icon="◉" title="Pitch" sub="Available for work" active={type==='hire_me'} on={()=>choose('hire_me')}/><Big icon="▶" title="Show work" sub={cfg.proofLabel} active={type==='video'} on={()=>choose('video')}/><Big icon="＋" title="Hire" sub="Post a job" active={type==='job'} on={()=>choose('job')}/></View>
+  <Text style={s.moreK}>MARKET</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.moreRow}>{secondary.map(t=>{const m=postMeta[t];return<TouchableOpacity key={t} onPress={()=>choose(t)} style={[s.more,type===t&&s.moreOn]}><Text style={[s.moreTxt,type===t&&s.moreTxtOn]}>{m.label}</Text></TouchableOpacity>})}</ScrollView>
+  <View style={s.preview}><Text style={s.previewK}>{type==='hire_me'?'VIDEO PITCH':type==='video'?'WORK PROOF':type==='job'?'ON-SITE OPPORTUNITY':meta.label}</Text><Text style={s.previewTitle}>{title||placeholderTitle(type,profession)}</Text>{isJob&&effectiveCompany?<Text style={s.previewMeta}>{effectiveCompany}{jobLocation?` · ${jobLocation}`:''}</Text>:profession&&!isJob?<Text style={s.previewMeta}>{profession}</Text>:null}<Text style={s.previewBody}>{desc||placeholderBody(type,cfg.pitchHint)}</Text></View>
+  {!isJob?<View style={s.form}><Input l="Profession" v={profession} on={setProfession} ph="Your profession"/><Input l={type==='hire_me'?'Pitch headline':'Headline'} v={title} on={setTitle} ph={placeholderTitle(type,profession)}/><Input l="Short context" v={desc} on={setDesc} area ph={placeholderBody(type,cfg.pitchHint)}/>{marketType&&<><Input l="Price / starting price (€)" v={price} on={setPrice} ph="45" keyboard="decimal-pad"/><Toggle t="Remote / online" b="Enable only if this can be delivered remotely." v={remote} on={setRemote}/></>}</View>:
+  <View style={s.form}>
+   {organizations.length>0&&<><Text style={s.label}>POST AS</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.orgRow}>{organizations.map((org:any)=><TouchableOpacity key={org.id} onPress={()=>chooseOrg(org)} style={[s.orgChip,selectedOrg?.id===org.id&&s.orgChipOn]}><Text style={[s.orgName,selectedOrg?.id===org.id&&s.orgNameOn]}>{org.name}</Text><Text style={s.orgRole}>{org.my_role}</Text></TouchableOpacity>)}<TouchableOpacity onPress={()=>{setSelectedOrg(null);setCompany('')}} style={[s.orgChip,!selectedOrg&&s.orgChipOn]}><Text style={[s.orgName,!selectedOrg&&s.orgNameOn]}>Other</Text></TouchableOpacity></ScrollView></>}
+   {!selectedOrg&&<Input l="Company / employer" v={company} on={setCompany} ph="Company name"/>}
+   <Input l="Job title" v={title} on={setTitle} ph="Electrician, Chef, Nurse, Architect..."/><Input l="Location" v={jobLocation} on={setJobLocation} ph="Valletta, Malta"/>
+   <Text style={s.label}>WORKPLACE</Text><View style={s.optionRow}>{workplaces.map(x=><Option key={x} label={x.replace('_',' ')} active={workplace===x} on={()=>setWorkplace(x)}/>)}</View>
+   <Text style={s.label}>EMPLOYMENT</Text><View style={s.optionRow}>{jobTypes.map(x=><Option key={x} label={x.replace('_',' ')} active={jobType===x} on={()=>setJobType(x)}/>)}</View>
+   <Input l="Schedule / shift" v={schedule} on={setSchedule} ph="Mon–Fri · 07:00–16:00"/><Input l="Positions" v={positions} on={setPositions} ph="1" keyboard="number-pad"/><Input l="Short context" v={desc} on={setDesc} area ph="What will they do? What matters most? Keep it human and clear."/>
+  </View>}
+  <TouchableOpacity disabled={busy||!canPublish} onPress={publish} style={[s.publish,{opacity:(busy||!canPublish)?.5:1}]}>{busy?<ActivityIndicator color="#fff"/>:<><View><Text style={s.publishK}>VIDEO · MAX 90 SEC</Text><Text style={s.publishTxt}>Choose clip & publish</Text></View><Text style={s.arrow}>→</Text></>}</TouchableOpacity>{!!msg&&<Text style={[s.msg,msg.startsWith('Publish failed')&&{color:C.red}]}>{msg}</Text>}
+ </ScrollView>
 }
-
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#000', padding: 24, paddingTop: 70 },
-  h1: { color: '#fff', fontSize: 26, fontWeight: '700', marginBottom: 20 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  typePill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 100, borderWidth: 1, borderColor: '#222' },
-  typePillOn: { backgroundColor: '#fff', borderColor: '#fff' },
-  typeTxt: { color: '#888', fontSize: 12, fontWeight: '700' },
-  typeTxtOn: { color: '#000' },
-  input: { backgroundColor: '#111', borderWidth: 1.5, borderColor: '#1E1E1E', borderRadius: 13,
-           padding: 15, color: '#fff', fontSize: 15, marginBottom: 14 },
-  btn: { backgroundColor: '#4F80FF', height: 52, borderRadius: 13,
-         justifyContent: 'center', alignItems: 'center' },
-  btnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  msg: { color: '#00D085', marginTop: 14, textAlign: 'center' },
-});
+const Big=({icon,title,sub,active,on}:any)=><TouchableOpacity onPress={on} style={[s.big,active&&s.bigOn]}><Text style={[s.bigIcon,active&&{color:C.violetSoft}]}>{icon}</Text><Text style={[s.bigTitle,active&&{color:C.text}]}>{title}</Text><Text style={s.bigSub}>{sub}</Text></TouchableOpacity>;
+const Option=({label,active,on}:any)=><TouchableOpacity onPress={on} style={[s.option,active&&s.optionOn]}><Text style={[s.optionTxt,active&&s.optionTxtOn]}>{label}</Text></TouchableOpacity>;
+const Input=({l,v,on,ph,area,keyboard}:any)=><View style={{marginTop:13}}><Text style={s.fieldLabel}>{l}</Text><TextInput value={v} onChangeText={on} placeholder={ph} placeholderTextColor={C.faint} keyboardType={keyboard||'default'} multiline={!!area} style={[s.input,area&&s.area]}/></View>;
+const Toggle=({t,b,v,on}:any)=><View style={s.toggle}><View><Text style={s.toggleT}>{t}</Text><Text style={s.toggleB}>{b}</Text></View><Switch value={v} onValueChange={on} trackColor={{true:C.violet}}/></View>;
+const placeholderTitle=(t:string,p:string)=>t==='hire_me'?`Meet ${p||'me'}`:t==='video'?`${p||'My'} work`:t==='job'?'Who are you hiring?':'What are you offering?';
+const placeholderBody=(t:string,h:string)=>t==='hire_me'?'Who are you, what can you do, where are you, and when can you start?':t==='video'?h:t==='job'?'Role, place, schedule and the person you need.':'Keep it short and useful.';
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},content:{paddingTop:S.top,paddingHorizontal:S.pageX,paddingBottom:120},wordmark:{color:C.text,fontFamily:F.body,fontSize:31,fontWeight:'900',letterSpacing:-1.4},it:{color:C.violet2},tagline:{color:C.muted,fontSize:7,fontWeight:'900',letterSpacing:1.8},h1:{color:C.text,fontSize:29,fontWeight:'900',lineHeight:34,letterSpacing:-1,marginTop:20},sub:{color:C.muted,fontSize:11,marginTop:6},primaryRow:{flexDirection:'row',gap:8,marginTop:18},big:{flex:1,minHeight:110,borderRadius:18,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,padding:11,justifyContent:'flex-end'},bigOn:{borderColor:C.violetSoft,backgroundColor:'#17112A'},bigIcon:{color:C.faint,fontSize:21,marginBottom:'auto'},bigTitle:{color:C.muted,fontSize:11,fontWeight:'900'},bigSub:{color:C.faint,fontSize:7.5,marginTop:3},moreK:{color:C.faint,fontSize:7,fontWeight:'900',letterSpacing:1.2,marginTop:17},moreRow:{gap:6,paddingTop:8},more:{borderWidth:1,borderColor:C.line,borderRadius:R.pill,paddingHorizontal:10,paddingVertical:7},moreOn:{backgroundColor:C.violet,borderColor:C.violet},moreTxt:{color:C.muted,fontSize:8,fontWeight:'900'},moreTxtOn:{color:'#fff'},preview:{borderWidth:1,borderColor:C.lineSoft,borderRadius:18,backgroundColor:C.panel,marginTop:16,padding:14},previewK:{color:C.violetSoft,fontSize:7,fontWeight:'900',letterSpacing:1},previewTitle:{color:C.text,fontSize:18,fontWeight:'900',marginTop:6},previewMeta:{color:C.muted,fontSize:8.5,fontWeight:'800',marginTop:3},previewBody:{color:C.muted,fontSize:10,lineHeight:16,marginTop:6},form:{marginTop:5},label:{color:C.faint,fontSize:7,fontWeight:'900',letterSpacing:1.1,marginTop:15,marginBottom:7},fieldLabel:{color:C.text,fontSize:9,fontWeight:'900',marginBottom:6},input:{borderWidth:1,borderColor:C.line,borderRadius:14,backgroundColor:C.panel,paddingHorizontal:12,paddingVertical:12,color:C.text,fontSize:11},area:{minHeight:92,textAlignVertical:'top'},orgRow:{gap:7},orgChip:{minWidth:110,borderWidth:1,borderColor:C.line,borderRadius:13,paddingHorizontal:10,paddingVertical:8,backgroundColor:C.panel},orgChipOn:{borderColor:C.violetSoft,backgroundColor:'rgba(124,58,237,.12)'},orgName:{color:C.muted,fontSize:8.5,fontWeight:'900'},orgNameOn:{color:C.text},orgRole:{color:C.faint,fontSize:7,marginTop:2,textTransform:'capitalize'},optionRow:{flexDirection:'row',flexWrap:'wrap',gap:6},option:{borderWidth:1,borderColor:C.line,borderRadius:R.pill,paddingHorizontal:10,paddingVertical:7},optionOn:{backgroundColor:C.text,borderColor:C.text},optionTxt:{color:C.muted,fontSize:8,fontWeight:'800',textTransform:'capitalize'},optionTxtOn:{color:C.black},toggle:{minHeight:60,marginTop:13,borderRadius:14,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,paddingHorizontal:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},toggleT:{color:C.text,fontSize:9,fontWeight:'900'},toggleB:{color:C.faint,fontSize:7.5,marginTop:2},publish:{height:58,borderRadius:16,backgroundColor:C.violet,marginTop:20,paddingHorizontal:15,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},publishK:{color:'rgba(255,255,255,.65)',fontSize:7,fontWeight:'900',letterSpacing:1},publishTxt:{color:'#fff',fontSize:11,fontWeight:'900',marginTop:2},arrow:{color:'#fff',fontSize:22},msg:{color:C.green,textAlign:'center',fontSize:9,fontWeight:'800',marginTop:11}});

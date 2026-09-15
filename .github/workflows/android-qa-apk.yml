@@ -1,0 +1,85 @@
+name: Android QA APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/workit-world-bazaar]
+    paths:
+      - 'App.tsx'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - '.github/workflows/android-qa-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: workit-android-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      EXPO_PUBLIC_SUPABASE_URL: 'https://jzhsucsudpkihnvlylqj.supabase.co'
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_SArGeVyPr-N0BUK3gHnlKA_ByT1xt6u'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare stable APK name
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk WORKIT-Android-QA.apk
+
+      - name: Upload WORKIT QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workit-android-qa
+          path: WORKIT-Android-QA.apk
+          retention-days: 14
+
+      - name: Publish stable QA release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST_SHA="$(gh api "repos/$GITHUB_REPOSITORY/branches/${GITHUB_REF_NAME}" --jq '.commit.sha')"
+          if [ "$LATEST_SHA" != "$GITHUB_SHA" ]; then
+            echo "Skipping stable QA release: build $GITHUB_SHA is stale; branch head is $LATEST_SHA"
+            exit 0
+          fi
+
+          if gh release view workit-qa-latest >/dev/null 2>&1; then
+            gh release upload workit-qa-latest WORKIT-Android-QA.apk --clobber
+            gh release edit workit-qa-latest \
+              --target "$GITHUB_SHA" \
+              --title 'WORKIT Android QA' \
+              --notes "Internal QA build for WORKIT Android testing. Commit: $GITHUB_SHA" \
+              --prerelease
+          else
+            gh release create workit-qa-latest WORKIT-Android-QA.apk \
+              --title 'WORKIT Android QA' \
+              --notes "Internal QA build for WORKIT Android testing. Commit: $GITHUB_SHA" \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
