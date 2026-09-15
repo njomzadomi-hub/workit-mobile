@@ -7,5 +7,7 @@ async function call(path:string,opts:RequestInit={}){const res=await fetch(`${BA
 
 export const createCandidateInvite=(payload:{candidate_id:string;job_post_id:string;conversation_id?:string|null})=>call('/invites',{method:'POST',body:JSON.stringify(payload)});
 export const markCandidateInviteDelivered=(inviteId:string)=>call(`/invites/${inviteId}/delivered`,{method:'PATCH',body:'{}'});
+export const scheduleInterview=(applicationId:string,payload:{slots:string[];mode:'in_person'|'video'|'phone';location?:string|null;duration_minutes?:number})=>call(`/applications/${applicationId}/interview`,{method:'POST',body:JSON.stringify(payload)});
+export const respondToInterview=(applicationId:string,payload:{response:'confirmed'|'declined';slot?:string|null})=>call(`/applications/${applicationId}/interview-response`,{method:'PATCH',body:JSON.stringify(payload)});
 export const sendStructuredOffer=(applicationId:string,payload:{compensation:string;start_date?:string|null;contract?:string|null;schedule?:string|null;location?:string|null;note?:string|null})=>call(`/applications/${applicationId}/offer`,{method:'POST',body:JSON.stringify(payload)});
 export const respondToOffer=(applicationId:string,response:'accepted'|'declined')=>call(`/applications/${applicationId}/offer-response`,{method:'PATCH',body:JSON.stringify({response})});
