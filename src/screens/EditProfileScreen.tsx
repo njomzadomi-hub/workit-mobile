@@ -1,9 +1,7 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{ActivityIndicator,Alert,Image,ScrollView,StyleSheet,Switch,Text,TextInput,TouchableOpacity,View}from'react-native';
-import*as ImagePicker from'expo-image-picker';
-import{File}from'expo-file-system';
-import{commitAvatar,getAvatarUploadUrl,getMe,updateMe}from'../lib/api';
-import{supabase}from'../lib/supabase';
+import{getMe,updateMe}from'../lib/api';
+import{pickAndUploadAvatar}from'../lib/avatar';
 import{C,F,R,S}from'../lib/theme';
 import{getProfessionProfile}from'../lib/professionProfile';
 
@@ -16,7 +14,7 @@ export default function EditProfileScreen({navigation}:any){
  useEffect(()=>{getMe().then((x:any)=>{setP(x);setAvatarUrl(x.avatar_url||'');setField({full_name:x.full_name||'',title:x.title||'',bio:x.bio||'',location:x.location||'',skills:(x.skills||[]).join(', '),tools:(x.tools||[]).join(', '),languages:(x.languages||[]).join(', '),qualifications:(x.qualifications||[]).map((q:any)=>[q.degree||q.title,q.institution||q.school,q.years].filter(Boolean).join(' | ')).join('\n'),certifications:(x.certifications||[]).map((c:any)=>[c.name||c.title,c.issuer].filter(Boolean).join(' | ')).join('\n'),available_for_work:!!x.available_for_work,hourly_rate:x.hourly_rate?String(x.hourly_rate):''})})},[]);
  const set=(k:string,v:any)=>setField((f:any)=>({...f,[k]:v}));
  const initials=String(field.full_name||p?.full_name||'W').split(' ').map((x:string)=>x[0]).join('').slice(0,2).toUpperCase();
- const changeAvatar=async()=>{if(avatarBusy)return;try{const permission=await ImagePicker.requestMediaLibraryPermissionsAsync();if(!permission.granted)return Alert.alert('Photo access needed','Allow WORKIT to access the photo you choose for your professional profile.');const pick=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Images,allowsEditing:true,aspect:[1,1],quality:.85});if(pick.canceled)return;const asset=pick.assets?.[0];if(!asset?.uri)return;if(asset.fileSize&&asset.fileSize>10*1024*1024)return Alert.alert('Photo too large','Choose an image under 10 MB.');setAvatarBusy(true);const contentType=asset.mimeType||'image/jpeg';const slot=await getAvatarUploadUrl(contentType);const bytes=await new File(asset.uri).arrayBuffer();if(bytes.byteLength>10*1024*1024)throw new Error('Photo must be under 10 MB.');const{error}=await supabase.storage.from('workit-avatars').uploadToSignedUrl(slot.path,slot.token,bytes,{contentType,upsert:false});if(error)throw error;const updated=await commitAvatar(slot.path);setAvatarUrl(updated.avatar_url||slot.public_url||'');}catch(e:any){Alert.alert('Could not update photo',e?.message||'Please try again.')}finally{setAvatarBusy(false)}};
+ const changeAvatar=async()=>{if(avatarBusy)return;setAvatarBusy(true);try{const url=await pickAndUploadAvatar();if(url)setAvatarUrl(url)}catch(e:any){Alert.alert('Could not update photo',e?.message||'Please try again.')}finally{setAvatarBusy(false)}};
  const cfg=useMemo(()=>getProfessionProfile(field.title),[field.title]);
  const required=[field.full_name,field.title,field.bio,field.location,field.skills];const optional=[field.tools,field.languages,field.qualifications,field.certifications];
  const score=Math.round((required.filter((v:any)=>String(v||'').trim()).length/required.length)*70+(optional.filter((v:any)=>String(v||'').trim()).length/optional.length)*30);
