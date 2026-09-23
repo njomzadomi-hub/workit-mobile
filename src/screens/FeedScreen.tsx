@@ -1,101 +1,39 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, Dimensions, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
-import { getFeed, likePost } from '../lib/api';
+import React,{useCallback,useRef,useState}from'react';
+import{View,Text,FlatList,Dimensions,TouchableOpacity,StyleSheet,Image,Share,RefreshControl,Alert}from'react-native';
+import{useFocusEffect}from'@react-navigation/native';
+import{Video,ResizeMode}from'expo-av';
+import{getFeed,getNotifications,likePost,submitReport,trackShare}from'../lib/api';
+import{trackPostView}from'../lib/feedSignals';
+import{C,F,R}from'../lib/theme';
 
-const { height: H } = Dimensions.get('window');
+const{height:H}=Dimensions.get('window');
+const FEED_H=H-80;
+const primaryAction=(item:any)=>{if(item.type==='job')return'View job';if(['service','product','teach'].includes(item.type)&&item.market_item_id)return item.type==='product'?'View item':'View offer';if(item.type==='hire_me')return'Meet candidate';return'View profile'};
 
-export default function FeedScreen() {
-  const [items, setItems] = useState<any[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [activeIdx, setActiveIdx] = useState(0);
-
-  const load = async (c?: string) => {
-    try {
-      const res = await getFeed(c ?? undefined);
-      setItems(prev => (c ? [...prev, ...res.items] : res.items));
-      setCursor(res.nextCursor);
-    } catch (e) { console.warn(e); }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const onViewable = useRef(({ viewableItems }: any) => {
-    if (viewableItems[0]) setActiveIdx(viewableItems[0].index);
-  }).current;
-
-  const like = async (id: string, idx: number) => {
-    setItems(prev => prev.map((p, i) => i === idx ? { ...p, like_count: p.like_count + 1 } : p));
-    try { await likePost(id); } catch {}
-  };
-
-  return (
-    <FlatList
-      data={items}
-      keyExtractor={i => i.id}
-      pagingEnabled
-      showsVerticalScrollIndicator={false}
-      snapToInterval={H}
-      decelerationRate="fast"
-      onViewableItemsChanged={onViewable}
-      viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-      onEndReached={() => cursor && load(cursor)}
-      onEndReachedThreshold={2}
-      renderItem={({ item, index }) => (
-        <View style={{ height: H, backgroundColor: '#000' }}>
-          {item.cf_playback_url ? (
-            <Video
-              source={{ uri: item.cf_playback_url }}
-              style={StyleSheet.absoluteFill}
-              resizeMode={ResizeMode.COVER}
-              shouldPlay={index === activeIdx}
-              isLooping
-              isMuted={false}
-            />
-          ) : item.thumbnail_url ? (
-            <Image source={{ uri: item.thumbnail_url }} style={StyleSheet.absoluteFill} />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#111' }]} />
-          )}
-
-          <View style={s.overlay}>
-            <View style={s.badge}><Text style={s.badgeTxt}>{item.type.toUpperCase()}</Text></View>
-            <View style={s.info}>
-              <Text style={s.name}>{item.author?.full_name}</Text>
-              <Text style={s.role}>{item.author?.title}</Text>
-              <Text style={s.title}>{item.title}</Text>
-              {!!item.description && <Text style={s.desc} numberOfLines={2}>{item.description}</Text>}
-            </View>
-            <View style={s.side}>
-              <TouchableOpacity style={s.action} onPress={() => like(item.id, index)}>
-                <Text style={s.actionIcon}>♥</Text>
-                <Text style={s.actionN}>{item.like_count}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.action}>
-                <Text style={s.actionIcon}>💬</Text>
-                <Text style={s.actionN}>{item.comment_count}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-    />
-  );
+export default function FeedScreen({navigation}:any){
+ const[items,setItems]=useState<any[]>([]);const[cursor,setCursor]=useState<string|null>(null);const[activeIdx,setActiveIdx]=useState(0);const[mode,setMode]=useState<'For You'|'Following'>('For You');const[refreshing,setRefreshing]=useState(false);const[muted,setMuted]=useState(false);const[likeBusy,setLikeBusy]=useState<Record<string,boolean>>({});const[reportBusy,setReportBusy]=useState<Record<string,boolean>>({});const[hasUnread,setHasUnread]=useState(false);const feedMode=mode==='Following'?'following':'for_you';
+ const load=useCallback(async(c?:string)=>{try{const res=await getFeed(c,feedMode);const fresh=res.items||[];setItems(p=>c?[...p,...fresh]:fresh);setCursor(res.nextCursor||null)}catch{if(!c)setItems([])}},[feedMode]);
+ const loadUnread=useCallback(async()=>{try{const r=await getNotifications();const list=Array.isArray(r)?r:r.items||[];setHasUnread(list.some((x:any)=>x.is_read===false))}catch{}},[]);
+ const refresh=useCallback(async()=>{setRefreshing(true);try{await Promise.all([load(),loadUnread()])}finally{setRefreshing(false)}},[load,loadUnread]);useFocusEffect(useCallback(()=>{void load();void loadUnread();return()=>{}},[load,loadUnread]));
+ const onViewable=useRef(({viewableItems}:any)=>{const top=viewableItems?.[0];if(top){setActiveIdx(top.index||0);const id=top.item?.id;if(id)void trackPostView(id)}}).current;
+ const root=()=>navigation.getParent();const openProfessional=(item:any)=>{const username=item.author?.username;if(username)root()?.navigate('Professional',{username,profile:item.author})};
+ const act=(item:any)=>{if(['service','product','teach'].includes(item.type)&&item.market_item_id)return root()?.navigate('MarketDetail',{id:item.market_item_id});if(item.type==='job')return root()?.navigate('JobDetail',{jobId:item.id});return openProfessional(item)};
+ const like=async(item:any)=>{const id=String(item.id||'');if(!id||likeBusy[id])return;setLikeBusy(p=>({...p,[id]:true}));try{const r=await likePost(id);setItems(p=>p.map(x=>x.id===item.id?{...x,liked_by_me:!!r.liked,like_count:Number(r.like_count||0)}:x))}finally{setLikeBusy(p=>({...p,[id]:false}))}};
+ const share=async(item:any)=>{try{const r=await Share.share({message:`${item.author?.full_name||'Someone'} on WORKIT — ${item.title||'See their work'}`});if(r.action===Share.sharedAction){const tracked=await trackShare(item.id);setItems(p=>p.map(x=>x.id===item.id?{...x,share_count:Number(tracked.share_count||0)}:x))}}catch{}};
+ const sendReport=async(item:any,reason:string)=>{const id=String(item.id||'');if(!id||reportBusy[id])return;setReportBusy(p=>({...p,[id]:true}));try{await submitReport({target_type:'post',target_id:id,reason});Alert.alert('Report sent','Thank you. This post has been added to the WORKIT moderation queue.')}catch{Alert.alert('Could not send report','Check your connection and try again.')}finally{setReportBusy(p=>({...p,[id]:false}))}};
+ const report=(item:any)=>Alert.alert('Report this post','Choose the reason that best describes the problem.',[{text:'Scam or fraud',onPress:()=>void sendReport(item,'scam')},{text:'Misleading content',onPress:()=>void sendReport(item,'misleading')},{text:'Harassment or abuse',onPress:()=>void sendReport(item,'harassment')},{text:'Illegal or unsafe',onPress:()=>void sendReport(item,'illegal')},{text:'Other',onPress:()=>void sendReport(item,'other')},{text:'Cancel',style:'cancel'}]);
+ const switchMode=(next:'For You'|'Following')=>{if(next===mode)return;setMode(next);setCursor(null);setActiveIdx(0);setItems([])};
+ const emptyTitle=mode==='Following'?'Follow people whose work you want to see.':'Your work feed starts here.';const emptyCta=mode==='Following'?'Explore talent':'Post your first pitch';const emptyAction=()=>mode==='Following'?navigation.navigate('Explore'):navigation.navigate('Post');
+ return<View style={s.root}>
+  <View style={s.top}><View><Text style={s.wordmark}>WORK<Text style={s.wordmarkIT}>IT</Text></Text><Text style={s.tagline}>WORK. TALENT. PEOPLE.</Text></View><View style={s.topActions}><TouchableOpacity onPress={()=>root()?.navigate('GlobalSearch')} style={s.iconBtn}><Text style={s.icon}>⌕</Text></TouchableOpacity><TouchableOpacity onPress={()=>root()?.navigate('Notifications')} style={s.iconBtn}><Text style={s.icon}>♢</Text>{hasUnread&&<View style={s.dot}/>}</TouchableOpacity></View></View>
+  <View style={s.switcher}>{(['For You','Following'] as const).map(x=><TouchableOpacity key={x} onPress={()=>switchMode(x)} style={[s.switchBtn,mode===x&&s.switchOn]}><Text style={[s.switchTxt,mode===x&&s.switchTxtOn]}>{x}</Text></TouchableOpacity>)}</View>
+  <FlatList data={items} keyExtractor={(i,idx)=>i.id||String(idx)} pagingEnabled snapToInterval={FEED_H} decelerationRate="fast" showsVerticalScrollIndicator={false} onViewableItemsChanged={onViewable} viewabilityConfig={{itemVisiblePercentThreshold:60}} onEndReached={()=>cursor&&load(cursor)} onEndReachedThreshold={2} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.white}/>} ListEmptyComponent={<View style={s.empty}><Text style={s.emptyIcon}>◎</Text><Text style={s.emptyTitle}>{emptyTitle}</Text><TouchableOpacity onPress={emptyAction} style={s.emptyBtn}><Text style={s.emptyBtnTxt}>{emptyCta}</Text></TouchableOpacity></View>}
+   renderItem={({item,index})=>{const a=item.author||{};const available=a.available_for_work!==false;const rating=Number(a.rating||0);const proof=rating?`★ ${rating.toFixed(1)}${a.review_count?` · ${a.review_count} reviews`:''}`:(a.completed_jobs?`${a.completed_jobs} completed jobs`:'See work proof');return<View style={s.card}>
+    {item.cf_playback_url?<TouchableOpacity activeOpacity={1} onPress={()=>setMuted(v=>!v)} style={StyleSheet.absoluteFill}><Video source={{uri:item.cf_playback_url}} style={StyleSheet.absoluteFill} resizeMode={ResizeMode.COVER} shouldPlay={index===activeIdx} isLooping isMuted={muted}/><View style={s.sound}><Text style={s.soundTxt}>{muted?'⌁':'◖'}</Text></View></TouchableOpacity>:item.thumbnail_url?<Image source={{uri:item.thumbnail_url}} style={StyleSheet.absoluteFill} resizeMode="cover"/>:<View style={[StyleSheet.absoluteFill,s.fallback]}><Text style={s.fallbackTxt}>WORK<Text style={s.wordmarkIT}>IT</Text></Text></View>}
+    <View pointerEvents="none" style={s.scrim}/><View style={s.side}><TouchableOpacity onPress={()=>openProfessional(item)} style={s.avatarWrap}>{a.avatar_url?<Image source={{uri:a.avatar_url}} style={s.avatar}/>:<Text style={s.avatarLetter}>{a.full_name?.[0]||'W'}</Text>}</TouchableOpacity><TouchableOpacity disabled={!!likeBusy[item.id]} onPress={()=>void like(item)} style={s.sideBtn}><Text style={[s.sideIcon,item.liked_by_me&&s.liked]}>♥</Text><Text style={[s.sideN,item.liked_by_me&&s.likedN]}>{item.like_count||0}</Text></TouchableOpacity><TouchableOpacity onPress={()=>root()?.navigate('Comments',{postId:item.id})} style={s.sideBtn}><Text style={s.sideIcon}>●</Text><Text style={s.sideN}>{item.comment_count||0}</Text></TouchableOpacity><TouchableOpacity onPress={()=>void share(item)} style={s.sideBtn}><Text style={s.sideIcon}>↗</Text>{Number(item.share_count||0)>0&&<Text style={s.sideN}>{item.share_count}</Text>}</TouchableOpacity><TouchableOpacity disabled={!!reportBusy[item.id]} onPress={()=>report(item)} style={s.sideBtn}><Text style={s.more}>•••</Text></TouchableOpacity></View>
+    <View style={s.info}><TouchableOpacity onPress={()=>openProfessional(item)} activeOpacity={.85}><View style={s.nameRow}><Text numberOfLines={1} style={s.name}>{a.full_name||'WORKIT member'}</Text>{a.verified&&<Text style={s.verified}>✓</Text>}</View><Text numberOfLines={1} style={s.role}>{a.title||'Professional'}{a.location?` · ${a.location}`:''}</Text></TouchableOpacity><View style={s.signalRow}><View style={[s.availability,available?s.available:s.unavailable]}><View style={[s.statusDot,{backgroundColor:available?C.green:C.faint}]}/><Text style={s.signalTxt}>{available?'Available':'Not available'}</Text></View><View style={s.proof}><Text style={s.proofTxt}>{proof}</Text></View></View>{!!item.title&&<Text numberOfLines={2} style={s.pitch}>{item.title}</Text>}{!!item.description&&<Text numberOfLines={1} style={s.desc}>{item.description}</Text>}<TouchableOpacity onPress={()=>act(item)} style={s.cta}><Text style={s.ctaTxt}>{primaryAction(item)}</Text><Text style={s.ctaArrow}>→</Text></TouchableOpacity></View>
+   </View>}}
+  />
+ </View>
 }
-
-const s = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
-  badge: { position: 'absolute', top: 56, left: 18, backgroundColor: 'rgba(79,128,255,.25)',
-           borderRadius: 100, paddingHorizontal: 11, paddingVertical: 4,
-           borderWidth: 1, borderColor: 'rgba(79,128,255,.4)' },
-  badgeTxt: { color: '#4F80FF', fontSize: 10, fontWeight: '700', letterSpacing: .5 },
-  info: { padding: 18, paddingBottom: 90, paddingRight: 80 },
-  name: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  role: { color: 'rgba(255,255,255,.55)', fontSize: 12, marginBottom: 8 },
-  title: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  desc: { color: 'rgba(255,255,255,.8)', fontSize: 13, lineHeight: 20 },
-  side: { position: 'absolute', right: 14, bottom: 120, alignItems: 'center', gap: 20 },
-  action: { alignItems: 'center' },
-  actionIcon: { fontSize: 26, color: '#fff' },
-  actionN: { color: '#fff', fontSize: 11, fontWeight: '600', marginTop: 3 },
-});
+const s=StyleSheet.create({root:{flex:1,backgroundColor:C.bg},top:{position:'absolute',top:0,left:0,right:0,zIndex:30,paddingTop:13,paddingHorizontal:17,flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'},wordmark:{color:C.white,fontFamily:F.body,fontSize:27,fontWeight:'900',letterSpacing:-1.2},wordmarkIT:{color:C.violet2},tagline:{color:'rgba(255,255,255,.58)',fontSize:6.5,fontWeight:'900',letterSpacing:1.8,marginTop:0},topActions:{flexDirection:'row',gap:5},iconBtn:{width:38,height:38,borderRadius:19,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,.18)'},icon:{color:C.white,fontSize:24},dot:{position:'absolute',right:5,top:4,width:7,height:7,borderRadius:4,backgroundColor:C.red},switcher:{position:'absolute',zIndex:25,top:78,left:18,width:220,height:44,borderRadius:22,borderWidth:1,borderColor:'rgba(255,255,255,.20)',backgroundColor:'rgba(5,7,10,.45)',padding:3,flexDirection:'row'},switchBtn:{flex:1,borderRadius:19,alignItems:'center',justifyContent:'center'},switchOn:{backgroundColor:'rgba(255,255,255,.18)'},switchTxt:{color:'rgba(255,255,255,.48)',fontSize:11,fontWeight:'700'},switchTxtOn:{color:C.white,fontWeight:'900'},card:{height:FEED_H,backgroundColor:'#080808'},fallback:{backgroundColor:C.panel2,alignItems:'center',justifyContent:'center'},fallbackTxt:{color:'#343B48',fontSize:42,fontWeight:'900'},scrim:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,.12)'},sound:{position:'absolute',right:15,top:132,width:34,height:34,borderRadius:17,backgroundColor:'rgba(0,0,0,.34)',alignItems:'center',justifyContent:'center'},soundTxt:{color:C.white,fontSize:17,fontWeight:'900'},empty:{height:FEED_H,alignItems:'center',justifyContent:'center',paddingHorizontal:40},emptyIcon:{color:C.violetSoft,fontSize:38},emptyTitle:{color:C.text,fontSize:18,fontWeight:'900',textAlign:'center',marginTop:12},emptyBtn:{height:44,paddingHorizontal:18,borderRadius:14,backgroundColor:C.text,alignItems:'center',justifyContent:'center',marginTop:16},emptyBtnTxt:{color:C.black,fontSize:10,fontWeight:'900'},side:{position:'absolute',right:14,bottom:166,alignItems:'center',gap:15},avatarWrap:{width:49,height:49,borderRadius:25,borderWidth:2,borderColor:C.white,backgroundColor:C.panel2,alignItems:'center',justifyContent:'center',overflow:'hidden'},avatar:{width:'100%',height:'100%'},avatarLetter:{color:C.white,fontWeight:'900'},sideBtn:{alignItems:'center',minWidth:38},sideIcon:{color:C.white,fontSize:25,fontWeight:'800',textShadowColor:'#000',textShadowRadius:8},more:{color:C.white,fontSize:15,fontWeight:'900',letterSpacing:1,textShadowColor:'#000',textShadowRadius:8},liked:{color:'#FF4267'},sideN:{color:C.white,fontSize:9,fontWeight:'800',marginTop:2},likedN:{color:'#FFB2C1'},info:{position:'absolute',left:17,right:75,bottom:24},nameRow:{flexDirection:'row',alignItems:'center',gap:5},name:{color:C.white,fontSize:18,fontWeight:'900',maxWidth:'90%'},verified:{color:C.blue2,fontSize:14,fontWeight:'900'},role:{color:'rgba(255,255,255,.74)',fontSize:10.5,fontWeight:'600',marginTop:2},signalRow:{flexDirection:'row',gap:7,marginTop:10,flexWrap:'wrap'},availability:{height:28,paddingHorizontal:9,borderRadius:R.pill,flexDirection:'row',alignItems:'center',gap:5,borderWidth:1},available:{backgroundColor:'rgba(20,85,58,.35)',borderColor:'rgba(71,226,154,.38)'},unavailable:{backgroundColor:'rgba(50,50,55,.35)',borderColor:'rgba(255,255,255,.14)'},statusDot:{width:6,height:6,borderRadius:3},signalTxt:{color:C.white,fontSize:8.5,fontWeight:'800'},proof:{height:28,paddingHorizontal:9,borderRadius:R.pill,justifyContent:'center',backgroundColor:'rgba(5,7,10,.48)',borderWidth:1,borderColor:'rgba(255,255,255,.15)'},proofTxt:{color:C.white,fontSize:8.5,fontWeight:'800'},pitch:{color:C.white,fontFamily:F.body,fontSize:21,lineHeight:25,fontWeight:'900',letterSpacing:-.4,marginTop:12},desc:{color:'rgba(255,255,255,.70)',fontSize:10.5,marginTop:4},cta:{height:52,borderRadius:16,marginTop:14,backgroundColor:'rgba(245,247,255,.96)',flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16},ctaTxt:{color:C.black,fontSize:12,fontWeight:'900'},ctaArrow:{color:C.black,fontSize:21,fontWeight:'700'}});

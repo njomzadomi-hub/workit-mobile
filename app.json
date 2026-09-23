@@ -2,20 +2,27 @@
   "expo": {
     "name": "WORKIT",
     "slug": "workit",
+    "scheme": "workit",
     "version": "0.1.0",
     "orientation": "portrait",
     "backgroundColor": "#000000",
     "userInterfaceStyle": "dark",
     "ios": {
-      "bundleIdentifier": "app.workit.mobile"
+      "bundleIdentifier": "app.workit.mobile",
+      "buildNumber": "1"
     },
     "android": {
-      "package": "app.workit.mobile"
+      "package": "app.workit.mobile",
+      "versionCode": 1
     },
-    "extra": {
-      "supabaseUrl": "https://jzhsucsudpkihnvlylqj.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6aHN1Y3N1ZHBraWhudmx5bHFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMzMzMTksImV4cCI6MjA5ODcwOTMxOX0.3WfMm_aMjpoQrzN1-5YvrNqEjBkImdIXKW5RFs0dOg8",
-      "apiUrl": "https://workit-api-production.up.railway.app/v1"
-    }
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow WORKIT to access photos and videos you choose for your professional profile and work."
+        }
+      ],
+      "expo-notifications"
+    ]
   }
 }
