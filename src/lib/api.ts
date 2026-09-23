@@ -33,6 +33,8 @@ export const cancelAccountDeletion=()=>api('/profiles/me/deletion-request',{meth
 export const getProfile=(username:string)=>api(`/profiles/${encodeURIComponent(username)}`);
 
 export const getUploadUrl=(contentType='video/mp4')=>publishCall('upload-url',{content_type:contentType});
+export const getAvatarUploadUrl=(contentType='image/jpeg')=>publishCall('avatar-upload-url',{content_type:contentType});
+export const commitAvatar=(path:string)=>publishCall('avatar-commit',{path});
 export const publishPost=(payload:any)=>publishCall('create-post',payload);
 export const publishJob=(payload:any)=>publishCall('create-job',payload);
 export const publishMarketItem=(payload:any)=>publishCall('create-market',payload);
