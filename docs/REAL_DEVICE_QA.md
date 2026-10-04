@@ -24,10 +24,20 @@ Run every P0 scenario on at least one current Android device and one current iPh
 ## P0 — jobs & hiring
 - Employer creates a job with video.
 - Job appears in Feed and Find Jobs.
+- Employer edits and closes a job; closed jobs stop accepting applications.
+- Employer saves a professional in Talent Pool and sends a job invite.
+- Candidate sees the invite, opens the role and applies; employer sees Viewed/Applied state where applicable.
 - Candidate opens Job Detail and applies with WORKIT profile.
 - Application appears under My Applications.
 - Employer sees candidate in Hiring pipeline.
-- Employer moves candidate New → Reviewed → Shortlisted → Interview → Offer → Hired.
+- Employer moves candidate New → Reviewed → Shortlisted.
+- Employer proposes multiple interview slots with mode, duration and location; candidate sees the same details.
+- Candidate confirms one slot; employer sees the selected time. Declining an interview closes the application.
+- Employer sends a structured offer with compensation and optional start date, contract, schedule, location and note.
+- Candidate sees the saved offer terms before Accept/Decline. Declining closes the application.
+- Employer cannot mark a pending offer Hired; after explicit candidate acceptance, employer can mark Hired.
+- Hired appears in candidate history and the verified-work presentation; verify its source is the accepted hiring record.
+- Relaunch both accounts at interview, offer and hired stages; status and terms persist without duplicate actions.
 - Employer and candidate can open a 1:1 chat.
 
 ## P0 — market & orders
@@ -48,6 +58,8 @@ Run every P0 scenario on at least one current Android device and one current iPh
 - Permission prompt is shown only through OS flow.
 - Expo push token registers on Android and iOS development/production builds.
 - Tapping a message push opens Inbox; other push types open Notifications.
+- Tap a push from a cold start while signed out, then sign in; the destination opens once after authentication.
+- Tap a push while signed in with the app in foreground and background; navigation opens once.
 - Foreground notification presentation is readable and not duplicated.
 
 ## P0 — safety
@@ -67,5 +79,7 @@ Run every P0 scenario on at least one current Android device and one current iPh
 
 ## Release evidence
 Record for each P0: platform, device, OS version, app build number, tester, date, PASS/FAIL, screenshot/video, issue link.
+
+For hiring, use two separate accounts and record the job ID, application ID and exact offer/interview status after each action. Test both candidate declines separately with fresh applications. Verify that chat delivery failure does not roll back a successful API transition, and that retry does not create a duplicate interview or offer.
 
 Do not merge or submit to stores with any open P0 failure.
