@@ -1,54 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { supabase } from '../lib/supabase';
+import React,{useState}from'react';
+import{ActivityIndicator,KeyboardAvoidingView,Platform,StyleSheet,Text,TextInput,TouchableOpacity,View}from'react-native';
+import{supabase}from'../lib/supabase';
+import{C,F,R,S}from'../lib/theme';
 
-export default function RegisterScreen({ navigation }: any) {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const register = async () => {
-    setBusy(true); setErr('');
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { full_name: fullName, account_type: 'individual' } },
-    });
-    if (error) setErr(error.message);
-    setBusy(false);
-  };
-
-  return (
-    <View style={s.wrap}>
-      <Text style={s.logo}>WORK<Text style={{ color: '#4F80FF' }}>IT</Text></Text>
-      <Text style={s.h1}>Create account</Text>
-      {!!err && <Text style={s.err}>{err}</Text>}
-      <TextInput style={s.input} placeholder="Full name" placeholderTextColor="#555"
-        value={fullName} onChangeText={setFullName} />
-      <TextInput style={s.input} placeholder="Email" placeholderTextColor="#555"
-        autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-      <TextInput style={s.input} placeholder="Password (min 8)" placeholderTextColor="#555"
-        secureTextEntry value={password} onChangeText={setPassword} />
-      <TouchableOpacity style={s.btn} onPress={register} disabled={busy}>
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnTxt}>Sign Up</Text>}
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={s.link}>Already have an account? <Text style={{ color: '#4F80FF' }}>Log in</Text></Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#000', justifyContent: 'center', padding: 28 },
-  logo: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 28 },
-  h1: { color: '#fff', fontSize: 26, fontWeight: '700', marginBottom: 20 },
-  err: { color: '#FF6060', marginBottom: 12 },
-  input: { backgroundColor: '#111', borderWidth: 1.5, borderColor: '#1E1E1E', borderRadius: 13,
-           padding: 15, color: '#fff', fontSize: 16, marginBottom: 14 },
-  btn: { backgroundColor: '#4F80FF', height: 52, borderRadius: 13,
-         justifyContent: 'center', alignItems: 'center', marginTop: 6 },
-  btnTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  link: { color: '#888', textAlign: 'center', marginTop: 22 },
-});
+export default function RegisterScreen({navigation}:any){
+ const[fullName,setFullName]=useState('');const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[err,setErr]=useState('');const[busy,setBusy]=useState(false);const[confirmation,setConfirmation]=useState('');
+ const register=async()=>{const cleanName=fullName.trim();const cleanEmail=email.trim().toLowerCase();if(cleanName.length<2){setErr('Enter your full name.');return}if(!cleanEmail||!cleanEmail.includes('@')){setErr('Enter a valid email address.');return}if(password.length<8){setErr('Password must be at least 8 characters.');return}setBusy(true);setErr('');try{const{data,error}=await supabase.auth.signUp({email:cleanEmail,password,options:{data:{full_name:cleanName,account_type:'individual'}}});if(error){setErr(error.message);return}if(!data.session){setConfirmation(cleanEmail)}}catch{setErr('Could not connect to WORKIT. Check your connection and try again.')}finally{setBusy(false)}};
+ if(confirmation)return<View style={s.page}><View style={s.wrap}><Text style={s.logo}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.kicker}>ONE LAST STEP</Text><Text style={s.h1}>Check your email.</Text><Text style={s.sub}>We sent a confirmation link to <Text style={s.strong}>{confirmation}</Text>. Confirm it, then come back and log in to finish your professional profile.</Text><TouchableOpacity style={s.btn} onPress={()=>navigation.navigate('Login')}><Text style={s.btnTxt}>Go to login</Text><Text style={s.arrow}>→</Text></TouchableOpacity></View></View>;
+ return<KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.page}><View style={s.wrap}>
+  <Text style={s.logo}>WORK<Text style={{color:C.violet2}}>IT</Text></Text><Text style={s.tag}>VIDEO-FIRST HIRING</Text>
+  <View style={s.hero}><Text style={s.kicker}>CREATE YOUR PROFESSIONAL IDENTITY</Text><Text style={s.h1}>Show what you can do.</Text><Text style={s.sub}>Join WORKIT free. Show who you are, show what you can do, and let employers discover the person behind the skills.</Text></View>
+  {!!err&&<View style={s.notice}><Text style={s.noticeTxt}>{err}</Text></View>}
+  <Text style={s.label}>Full name</Text><TextInput style={s.input} placeholder="Your name" placeholderTextColor={C.faint} textContentType="name" autoCapitalize="words" value={fullName} onChangeText={setFullName}/>
+  <Text style={s.label}>Email</Text><TextInput style={s.input} placeholder="you@example.com" placeholderTextColor={C.faint} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" value={email} onChangeText={setEmail}/>
+  <Text style={s.label}>Password</Text><TextInput style={s.input} placeholder="At least 8 characters" placeholderTextColor={C.faint} secureTextEntry textContentType="newPassword" value={password} onChangeText={setPassword} onSubmitEditing={()=>void register()}/>
+  <TouchableOpacity style={[s.btn,busy&&s.disabled]} onPress={()=>void register()} disabled={busy}>{busy?<ActivityIndicator color="#fff"/>:<><Text style={s.btnTxt}>Create my WORKIT profile</Text><Text style={s.arrow}>→</Text></>}</TouchableOpacity>
+  <View style={s.termsRow}><Text style={s.terms}>By continuing, you agree to WORKIT’s </Text><TouchableOpacity onPress={()=>navigation.navigate('Legal',{section:'terms'})}><Text style={s.termsLink}>Terms</Text></TouchableOpacity><Text style={s.terms}> and </Text><TouchableOpacity onPress={()=>navigation.navigate('Legal',{section:'privacy'})}><Text style={s.termsLink}>Privacy Policy</Text></TouchableOpacity><Text style={s.terms}>.</Text></View>
+  <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.link}>Already have an account? <Text style={s.linkOn}>Log in</Text></Text></TouchableOpacity>
+ </View></KeyboardAvoidingView>}
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},wrap:{flex:1,justifyContent:'center',paddingHorizontal:26,paddingTop:S.top,paddingBottom:28},logo:{color:C.text,fontFamily:F.body,fontSize:36,fontWeight:'900',letterSpacing:-1.6},tag:{color:C.muted,fontSize:7,fontWeight:'900',letterSpacing:1.7,marginTop:-1},hero:{marginTop:34,marginBottom:18},kicker:{color:C.violetSoft,fontSize:9,fontWeight:'900',letterSpacing:1.3,marginTop:28},h1:{color:C.text,fontSize:34,lineHeight:38,fontWeight:'900',letterSpacing:-1.4,marginTop:8},sub:{color:C.muted,fontSize:13,lineHeight:20,marginTop:10,maxWidth:340},strong:{color:C.text,fontWeight:'900'},notice:{borderWidth:1,borderColor:'#5B2940',backgroundColor:'#21111A',borderRadius:R.md,padding:12,marginBottom:12},noticeTxt:{color:'#FF9DBA',fontSize:11,lineHeight:17,fontWeight:'700'},label:{color:C.text,fontSize:10,fontWeight:'900',marginBottom:7,marginTop:10},input:{backgroundColor:C.panel,borderWidth:1,borderColor:C.lineSoft,borderRadius:16,paddingHorizontal:15,paddingVertical:14,color:C.text,fontSize:14},btn:{height:54,borderRadius:16,backgroundColor:C.violet,marginTop:19,paddingHorizontal:18,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},disabled:{opacity:.55},btnTxt:{color:'#fff',fontSize:12,fontWeight:'900'},arrow:{color:'#fff',fontSize:18,fontWeight:'900'},termsRow:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',alignItems:'center',marginTop:12,paddingHorizontal:6},terms:{color:C.faint,fontSize:9,lineHeight:15},termsLink:{color:C.violetSoft,fontSize:9,lineHeight:15,fontWeight:'900'},link:{color:C.muted,textAlign:'center',fontSize:11,marginTop:18},linkOn:{color:C.violetSoft,fontWeight:'900'}});

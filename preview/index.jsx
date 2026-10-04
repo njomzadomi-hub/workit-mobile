@@ -1,0 +1,13 @@
+import React,{useState} from 'react';
+import{createRoot}from'react-dom/client';
+import Login from '../src/screens/LoginScreen';
+import Explore from '../src/screens/ExploreScreen';
+import Interview from '../src/screens/ScheduleInterviewScreen';
+import Offer from '../src/screens/SendOfferScreen';
+import Recovery from '../src/screens/ForgotPasswordScreen';
+import ResetPassword from '../src/screens/ResetPasswordScreen';
+const Reset=()=> <ResetPassword status="ready" onClose={()=>alert('Visual preview only. No recovery session is active.')}/>;
+const screens={Login,Discover:Explore,Interview,Offer,Recovery,Reset};
+const route={params:{application:{id:'demo-application',job_post_id:'demo-job'},candidate:{id:'demo-mira',full_name:'Mira'},job:{id:'demo-job',title:'Brand Designer',job:{location:'Prishtina / Remote',job_type:'full_time',schedule:'Mon–Fri'}}}};
+function Preview(){const[tab,setTab]=useState('Discover');const Screen=screens[tab];const navigation={navigate:name=>name==='ForgotPassword'?setTab('Recovery'):alert('Visual preview — this destination opens in the native app.'),goBack:()=>setTab('Discover'),replace:()=>setTab('Discover'),getParent:()=>navigation};return <><header><div><b>WORK<span>IT</span></b><h1>See the current interface.</h1><p>Actual app screens · sample data · no live transactions</p></div><nav>{Object.keys(screens).map(t=><button key={t} aria-pressed={tab===t} onClick={()=>setTab(t)}>{t}</button>)}</nav></header><main><div className="phone"><div className="screen"><Screen key={tab} route={route} navigation={navigation}/></div></div><aside><span>DEVELOPMENT PREVIEW</span><h2>From discovery to a clear offer.</h2><p>Explore people, choose interview times, review the offer form and see account recovery.</p><p>These screens use the mobile app source. Browser rendering and sample data do not verify native performance, push notifications or backend delivery.</p><p className="source">Source: feat/workit-world-bazaar</p></aside></main></>};
+createRoot(document.getElementById('root')).render(<Preview/>);

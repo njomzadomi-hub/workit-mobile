@@ -1,0 +1,20 @@
+import React,{useState}from'react';
+import{Alert,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View}from'react-native';
+import{submitReport}from'../lib/api';
+import{C,R,S}from'../lib/theme';
+
+const REASONS=['scam_or_fraud','unsafe_or_illegal','harassment_or_abuse','misleading_content','spam','other'];
+export default function ReportScreen({route,navigation}:any){
+ const{targetType,targetId,targetLabel}=route.params||{};const[reason,setReason]=useState('');const[details,setDetails]=useState('');const[busy,setBusy]=useState(false);
+ const send=async()=>{if(!targetType||!targetId||!reason||busy)return;setBusy(true);try{await submitReport({target_type:targetType,target_id:targetId,reason,details:details.trim()||null});Alert.alert('Report sent','Thanks. WORKIT Trust & Safety can now review this report.',[{text:'Done',onPress:()=>navigation.goBack()}])}catch(e:any){Alert.alert('Could not send report',String(e?.message||'Please try again.'))}finally{setBusy(false)}};
+ return<ScrollView style={s.page} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+  <View style={s.head}><TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹ Back</Text></TouchableOpacity><Text style={s.kicker}>TRUST & SAFETY</Text></View>
+  <Text style={s.h1}>Report to WORKIT</Text><Text style={s.sub}>Reports are private. Tell us what looks unsafe, misleading or abusive and our moderation queue will receive it.</Text>
+  <View style={s.target}><Text style={s.targetK}>{String(targetType||'content').toUpperCase()}</Text><Text numberOfLines={2} style={s.targetT}>{targetLabel||'WORKIT content'}</Text></View>
+  <Text style={s.label}>WHAT'S WRONG?</Text><View style={s.reasons}>{REASONS.map(x=><TouchableOpacity key={x} onPress={()=>setReason(x)} style={[s.reason,reason===x&&s.reasonOn]}><Text style={[s.reasonTxt,reason===x&&s.reasonTxtOn]}>{label(x)}</Text></TouchableOpacity>)}</View>
+  <Text style={s.label}>DETAILS · OPTIONAL</Text><TextInput value={details} onChangeText={setDetails} placeholder="Add context that helps us review this report." placeholderTextColor={C.faint} multiline maxLength={1000} style={s.input}/>
+  <TouchableOpacity disabled={!reason||busy} onPress={()=>void send()} style={[s.send,(!reason||busy)&&{opacity:.45}]}><Text style={s.sendTxt}>{busy?'Sending…':'Send report'}</Text><Text style={s.sendTxt}>→</Text></TouchableOpacity>
+ </ScrollView>
+}
+const label=(x:string)=>({scam_or_fraud:'Scam or fraud',unsafe_or_illegal:'Unsafe or illegal',harassment_or_abuse:'Harassment or abuse',misleading_content:'Misleading content',spam:'Spam',other:'Other'} as any)[x]||x;
+const s=StyleSheet.create({page:{flex:1,backgroundColor:C.bg},content:{paddingTop:S.top,paddingHorizontal:S.pageX,paddingBottom:90},head:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},back:{color:C.violetSoft,fontSize:12,fontWeight:'800'},kicker:{color:C.red,fontSize:8,fontWeight:'900',letterSpacing:1.2},h1:{color:C.text,fontSize:30,fontWeight:'900',marginTop:24},sub:{color:C.muted,fontSize:11,lineHeight:18,marginTop:7},target:{marginTop:18,borderWidth:1,borderColor:C.lineSoft,borderRadius:16,backgroundColor:C.panel,padding:13},targetK:{color:C.violetSoft,fontSize:7,fontWeight:'900',letterSpacing:1},targetT:{color:C.text,fontSize:13,fontWeight:'900',marginTop:5},label:{color:C.faint,fontSize:8,fontWeight:'900',letterSpacing:1.1,marginTop:22,marginBottom:9},reasons:{gap:7},reason:{minHeight:46,borderRadius:13,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,paddingHorizontal:13,justifyContent:'center'},reasonOn:{borderColor:C.red,backgroundColor:'rgba(255,75,107,.08)'},reasonTxt:{color:C.muted,fontSize:10,fontWeight:'800'},reasonTxtOn:{color:C.text},input:{minHeight:120,borderRadius:15,borderWidth:1,borderColor:C.line,backgroundColor:C.panel,color:C.text,padding:13,textAlignVertical:'top',fontSize:11},send:{height:54,borderRadius:R.md,backgroundColor:C.red,marginTop:20,paddingHorizontal:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},sendTxt:{color:'#fff',fontSize:11,fontWeight:'900'}});
