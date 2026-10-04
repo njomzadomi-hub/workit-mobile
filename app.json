@@ -40,7 +40,8 @@
           "image": "./assets/brand/splash.png",
           "imageWidth": 128
         }
-      ]
+      ],
+      "expo-video"
     ],
     "icon": "./assets/brand/icon.png"
   }

@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState}from'react';
 import{Image,ScrollView,StyleSheet,Text,TouchableOpacity,View}from'react-native';
 import{useFocusEffect}from'@react-navigation/native';
-import{Video,ResizeMode}from'expo-av';
+import WorkVideo from '../components/WorkVideo';
 import{getMe,getProfilePosts,getProfileReviews,getMyWorkRelationships}from'../lib/api';
 import{getProfessionProfile}from'../lib/professionProfile';
 import{C,F,R,S}from'../lib/theme';
@@ -32,7 +32,7 @@ export default function SelfProfileScreen({navigation}:any){
    <Section title="Certifications" count={certs.length}>{certs.length?<View style={s.cards}>{certs.map((c:any,i:number)=><View key={i} style={s.cred}><Text style={s.certMark}>✓</Text><Text style={s.credT}>{c.name||c.title||'Certification'}</Text><Text style={s.credM}>{c.issuer||''}</Text></View>)}</View>:<Empty text="Add licenses or certifications relevant to your work."/>}</Section>
   </>:tab==='work'?<>
    <View style={s.workHead}><View style={{flex:1}}><Text style={s.workTitle}>{cfg.proofLabel}</Text><Text style={s.workSub}>{cfg.pitchHint}</Text></View><TouchableOpacity onPress={()=>tabs()?.navigate('Post')} style={s.add}><Text style={s.addTxt}>＋</Text></TouchableOpacity></View>
-   {posts.length?<View style={s.grid}>{posts.map((x:any)=><View key={x.id} style={s.workCard}>{x.cf_playback_url?<Video source={{uri:x.cf_playback_url}} style={s.media} resizeMode={ResizeMode.COVER} useNativeControls shouldPlay={false}/>:x.thumbnail_url?<Image source={{uri:x.thumbnail_url}} style={s.media}/>:<View style={[s.media,s.mediaPh]}><Text style={s.play}>▶</Text></View>}<Text numberOfLines={2} style={s.workName}>{x.title}</Text><Text style={s.workMeta}>{String(x.type||'work').replace('_',' ')} · {x.view_count||0} views</Text></View>)}</View>:<Empty text="Publish a short pitch or show real work to build your proof."/>}
+   {posts.length?<View style={s.grid}>{posts.map((x:any)=><View key={x.id} style={s.workCard}>{x.cf_playback_url?<WorkVideo uri={x.cf_playback_url} style={s.media} controls playing={false}/>:x.thumbnail_url?<Image source={{uri:x.thumbnail_url}} style={s.media}/>:<View style={[s.media,s.mediaPh]}><Text style={s.play}>▶</Text></View>}<Text numberOfLines={2} style={s.workName}>{x.title}</Text><Text style={s.workMeta}>{String(x.type||'work').replace('_',' ')} · {x.view_count||0} views</Text></View>)}</View>:<Empty text="Publish a short pitch or show real work to build your proof."/>}
   </>:reviews.length?<View style={s.reviewList}>{reviews.map((r:any)=><View key={r.id} style={s.review}><Text style={s.reviewName}>{r.reviewer?.full_name||'WORKIT user'}</Text><Text style={s.stars}>{'★'.repeat(Math.max(1,Math.min(5,Number(r.rating||0))))}</Text>{!!r.comment&&<Text style={s.reviewBody}>{r.comment}</Text>}</View>)}</View>:<Empty text="Verified reviews will appear after completed WORKIT work."/>}
  </ScrollView>
 }

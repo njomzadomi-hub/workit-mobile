@@ -1,6 +1,6 @@
 import React,{useEffect,useState}from'react';
 import{View,Text,ScrollView,TouchableOpacity,StyleSheet,Alert,Image}from'react-native';
-import{Video,ResizeMode}from'expo-av';
+import WorkVideo from '../components/WorkVideo';
 import{createOrder,getMarketItem,openConversation,sendMessage,submitReport}from'../lib/api';
 import{C}from'../lib/theme';
 
@@ -15,7 +15,7 @@ export default function MarketDetailScreen({route,navigation}:any){
  const report=()=>Alert.alert('Report this listing','Choose the reason that best describes the problem.',[{text:'Scam or fraud',onPress:()=>void sendReport('scam')},{text:'Misleading listing',onPress:()=>void sendReport('misleading')},{text:'Illegal item or service',onPress:()=>void sendReport('illegal')},{text:'Other',onPress:()=>void sendReport('other')},{text:'Cancel',style:'cancel'}]);
  return<ScrollView style={s.page} contentContainerStyle={s.content}>
   <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.back}>‹ Back</Text></TouchableOpacity>
-  {item.media_url?(isVideo(item.media_url)?<View style={s.heroWrap}><Video source={{uri:item.media_url}} style={s.hero} resizeMode={ResizeMode.COVER} useNativeControls shouldPlay={false}/></View>:<Image source={{uri:item.media_url}} style={s.hero}/>):<View style={[s.hero,s.ph]}><Text style={s.phTxt}>WORKIT</Text></View>}
+  {item.media_url?(isVideo(item.media_url)?<View style={s.heroWrap}><WorkVideo uri={item.media_url} style={s.hero} controls playing={false}/></View>:<Image source={{uri:item.media_url}} style={s.hero}/>):<View style={[s.hero,s.ph]}><Text style={s.phTxt}>WORKIT</Text></View>}
   <Text style={s.type}>{String(item.type).toUpperCase()}</Text><Text style={s.h1}>{item.title}</Text>
   <Text style={s.seller}>{item.seller?.full_name||'WORKIT professional'} {item.seller?.verified?'✓':''}</Text>
   <Text style={s.rating}>★ {Number(item.seller?.rating||0).toFixed(1)} · {item.seller?.review_count||0} verified reviews</Text>

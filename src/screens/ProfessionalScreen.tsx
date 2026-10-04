@@ -1,6 +1,6 @@
 import React,{useEffect,useState}from'react';
 import{View,Text,ScrollView,TouchableOpacity,StyleSheet,Alert,Image}from'react-native';
-import{Video,ResizeMode}from'expo-av';
+import WorkVideo from '../components/WorkVideo';
 import{followProfile,getFollowStatus,getProfile,getProfilePosts,getProfileReviews,getProfileWorkRelationships,openConversation,submitReport,unfollowProfile}from'../lib/api';
 import{getSavedCandidateStatus,saveCandidate,unsaveCandidate}from'../lib/talentPool';
 import{getProfessionProfile}from'../lib/professionProfile';
@@ -69,7 +69,7 @@ export default function ProfessionalScreen({route,navigation}:any){
    </View>
    {!!p.bio&&<Text style={s.bio}>{p.bio}</Text>}
    {!!highlights.length&&<View style={s.highlights}>{highlights.map((x:string)=><View key={x} style={s.highlight}><Text style={s.highlightTxt}>{x}</Text></View>)}</View>}
-   {!!pitch&&<View style={s.pitchHero}><Video source={{uri:pitch.cf_playback_url}} style={s.pitchHeroVideo} resizeMode={ResizeMode.COVER} useNativeControls shouldPlay={false}/><View style={s.pitchHeroBadge}><Text style={s.pitchHeroBadgeTxt}>VIDEO PITCH</Text></View><View style={s.pitchHeroCopy}><Text numberOfLines={1} style={s.pitchHeroTitle}>{pitch.title||`Meet ${p.full_name||'this professional'}`}</Text><Text style={s.pitchHeroMeta}>See the person before the CV.</Text></View></View>}
+   {!!pitch&&<View style={s.pitchHero}><WorkVideo uri={pitch.cf_playback_url} style={s.pitchHeroVideo} controls playing={false}/><View style={s.pitchHeroBadge}><Text style={s.pitchHeroBadgeTxt}>VIDEO PITCH</Text></View><View style={s.pitchHeroCopy}><Text numberOfLines={1} style={s.pitchHeroTitle}>{pitch.title||`Meet ${p.full_name||'this professional'}`}</Text><Text style={s.pitchHeroMeta}>See the person before the CV.</Text></View></View>}
    <View style={s.metrics}><Metric n={verifiedWork.length} l="Verified work"/><Metric n={reviews.length||p.review_count||0} l="Reviews"/><Metric n={p.follower_count||0} l="Followers"/></View>
    <View style={s.actions}>
     <TouchableOpacity onPress={()=>navigation.navigate('CandidateInvite',{candidate:p})} style={s.primary}><Text style={s.primaryTxt}>Invite to job</Text></TouchableOpacity>
@@ -94,7 +94,7 @@ export default function ProfessionalScreen({route,navigation}:any){
  </ScrollView>
 }
 
-const Portfolio=({posts,cfg}:any)=>posts.length?<View style={s.portfolio}>{posts.map((x:any)=><View key={x.id} style={s.workCard}>{x.cf_playback_url?<Video source={{uri:x.cf_playback_url}} style={s.media} resizeMode={ResizeMode.COVER} useNativeControls shouldPlay={false}/>:x.thumbnail_url?<Image source={{uri:x.thumbnail_url}} style={s.media}/>:<View style={[s.media,s.mediaPh]}><Text style={s.play}>▶</Text></View>}<Text numberOfLines={2} style={s.workTitle}>{x.title||cfg.proofLabel}</Text><Text style={s.workMeta}>{String(x.type||'work').replace('_',' ')} · {x.view_count||0} views</Text></View>)}</View>:<Empty t="No work proof published yet."/>;
+const Portfolio=({posts,cfg}:any)=>posts.length?<View style={s.portfolio}>{posts.map((x:any)=><View key={x.id} style={s.workCard}>{x.cf_playback_url?<WorkVideo uri={x.cf_playback_url} style={s.media} controls playing={false}/>:x.thumbnail_url?<Image source={{uri:x.thumbnail_url}} style={s.media}/>:<View style={[s.media,s.mediaPh]}><Text style={s.play}>▶</Text></View>}<Text numberOfLines={2} style={s.workTitle}>{x.title||cfg.proofLabel}</Text><Text style={s.workMeta}>{String(x.type||'work').replace('_',' ')} · {x.view_count||0} views</Text></View>)}</View>:<Empty t="No work proof published yet."/>;
 const Reviews=({reviews}:any)=>reviews.length?<View style={s.reviewList}>{reviews.map((r:any)=><View key={r.id} style={s.review}><Text style={s.reviewName}>{r.reviewer?.full_name||'WORKIT user'}</Text><Text style={s.stars}>{'★'.repeat(Math.max(1,Math.min(5,Number(r.rating||0))))}</Text>{!!r.comment&&<Text style={s.reviewBody}>{r.comment}</Text>}</View>)}</View>:<Empty t="No verified reviews yet."/>;
 const Metric=({n,l}:any)=><View style={s.metric}><Text style={s.metricN}>{n}</Text><Text style={s.metricL}>{l}</Text></View>;
 const Section=({title,count,children}:any)=><View style={s.section}><View style={s.sectionHead}><Text style={s.sectionTitle}>{title}</Text><Text style={s.count}>{count}</Text></View>{children}</View>;

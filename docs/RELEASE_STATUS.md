@@ -5,6 +5,10 @@ Public launch is NOT approved by this report. Compilation is not device or integ
 ## Verified in this development session
 - Structured offer acceptance remains mandatory in the deployed hiring v7 backend before hiring.
 - Mobile typecheck and Android/iOS/web export pass after brand/config changes.
+- Expo Doctor passes 21/21 checks after runtime/media fixes.
+- Browser preview rendered all four screens; impossible interview/offer dates were rejected and a valid interview slot displayed.
+- Runtime dependencies aligned to Expo SDK 57, including React Native 0.86.3 (Hermes regression fix).
+- Replaced unmaintained expo-av with expo-video across feed, hiring, profile and marketplace views. Videos pause when screen loses focus or app enters background; playback errors show a readable fallback. Player behavior checked with a mock; physical-device playback remains open.
 - App icon, adaptive foreground, monochrome notification icon and splash are configured.
 - EAS project ID is resolved from the build environment and invalid UUIDs fail config generation. Missing ID suppresses push permission prompts; delivery is still unverified.
 - Android QA workflow uses Ubuntu 24.04 and Node 24-compatible checkout/setup-node actions. Assets/config changes trigger fresh builds.

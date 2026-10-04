@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useState}from'react';
 import{Alert,View,Text,ScrollView,TouchableOpacity,StyleSheet,Image,TextInput}from'react-native';
-import{Video,ResizeMode}from'expo-av';
+import WorkVideo from '../components/WorkVideo';
 import{getMarket,getSavedMarket,saveMarketItem,unsaveMarketItem}from'../lib/api';
 import{C,F,R,S,postMeta}from'../lib/theme';
 
@@ -18,7 +18,7 @@ export default function MarketScreen({navigation}:any){
     <View style={s.search}><Text style={s.searchIcon}>⌕</Text><TextInput value={query} onChangeText={setQuery} placeholder="Search market..." placeholderTextColor={C.faint} style={s.searchInput}/></View>
     <View style={s.sectionRow}><View><Text style={s.section}>Live listings</Text><Text style={s.sectionSub}>Marketplace is secondary to hiring — but fully real.</Text></View><Text style={s.count}>{visible.length}</Text></View>
     {visible.length?<View style={s.grid}>{visible.map((item:any,i:number)=>{const meta=postMeta[item.type]||postMeta.service;const rawPrice=item.price_amount??item.price;const price=rawPrice!=null?`${item.currency||'EUR'} ${Number(rawPrice).toFixed(0)}`:'Quote';const seller=item.author;const isSaved=saved.has(item.id);const saving=!!savedBusy[item.id];return<TouchableOpacity onPress={()=>open(item)} key={item.id||i} style={s.card} activeOpacity={.88}>
-      {item.media_url?(isVideo(item.media_url)?<View style={s.mediaWrap}><Video source={{uri:item.media_url}} style={s.image} resizeMode={ResizeMode.COVER} shouldPlay={false} isMuted/></View>:<Image source={{uri:item.media_url}} style={s.image}/>):<View style={[s.image,s.imagePh]}><Text style={s.imagePhTxt}>W</Text></View>}
+      {item.media_url?(isVideo(item.media_url)?<View style={s.mediaWrap}><WorkVideo uri={item.media_url} style={s.image} playing={false} muted/></View>:<Image source={{uri:item.media_url}} style={s.image}/>):<View style={[s.image,s.imagePh]}><Text style={s.imagePhTxt}>W</Text></View>}
       <TouchableOpacity disabled={saving} onPress={()=>void toggleSaved(item)} style={[s.save,isSaved&&s.saveOn,saving&&s.saveBusy]}><Text style={s.saveTxt}>{saving?'…':isSaved?'♥':'♡'}</Text></TouchableOpacity>
       <View style={[s.typePill,{borderColor:meta.accent}]}><Text style={[s.typeTxt,{color:meta.accent}]}>{meta.label}</Text></View>
       <View style={s.cardBody}><Text numberOfLines={2} style={s.title}>{item.title}</Text><Text numberOfLines={2} style={s.desc}>{item.description||'Professional offer on WORKIT.'}</Text><Text numberOfLines={1} style={s.author}>{seller?.full_name||'WORKIT member'} {seller?.verified?'✓':''}</Text><Text style={s.rating}>★ {seller?.rating||'New'} {seller?.review_count?`(${seller.review_count})`:''}</Text><View style={s.cardBottom}><Text style={s.price}>{price}</Text><View style={s.cta}><Text style={s.ctaTxt}>{meta.cta}</Text></View></View></View>
