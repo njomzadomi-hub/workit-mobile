@@ -9,6 +9,9 @@ Public launch is NOT approved by this report. Compilation is not device or integ
 - Browser preview rendered all four screens; impossible interview/offer dates were rejected and a valid interview slot displayed.
 - Runtime dependencies aligned to Expo SDK 57, including React Native 0.86.3 (Hermes regression fix).
 - Replaced unmaintained expo-av with expo-video across feed, hiring, profile and marketplace views. Videos pause when screen loses focus or app enters background; playback errors show a readable fallback. Player behavior checked with a mock; physical-device playback remains open.
+- Password recovery request/reset screens and cold/warm callback handling are implemented. Source tests cover callback validation, stale restore responses, duplicate requests, password validation and local recovery sign-out. Supabase redirect/SMTP setup and real-device delivery remain unverified.
+- Production preflight rejects missing IDs, placeholders, secret mobile keys and unsafe URLs; explicit EAS environments keep build profiles consistent.
+- Android QA build #159 succeeded for ba26da079f7313fef52545924d87fb85a0c1387c; published APK digest was sha256:53fa6abde1ca026ecf34e5a0673dd440425e082825c90beb5e5151aa255b8e87. Later source changes require a new build.
 - App icon, adaptive foreground, monochrome notification icon and splash are configured.
 - EAS project ID is resolved from the build environment and invalid UUIDs fail config generation. Missing ID suppresses push permission prompts; delivery is still unverified.
 - Android QA workflow uses Ubuntu 24.04 and Node 24-compatible checkout/setup-node actions. Assets/config changes trigger fresh builds.

@@ -12,6 +12,7 @@ export default function LoginScreen({navigation}:any){
   {!!err&&<View style={s.notice}><Text style={s.noticeTxt}>{err}</Text></View>}
   <Text style={s.label}>Email</Text><TextInput style={s.input} placeholder="you@example.com" placeholderTextColor={C.faint} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="emailAddress" value={email} onChangeText={setEmail}/>
   <Text style={s.label}>Password</Text><TextInput style={s.input} placeholder="Your password" placeholderTextColor={C.faint} secureTextEntry textContentType="password" value={password} onChangeText={setPassword} onSubmitEditing={()=>void login()}/>
+  <TouchableOpacity accessibilityRole="button" onPress={()=>navigation.navigate('ForgotPassword')} style={{alignSelf:'flex-end',paddingVertical:12}}><Text style={{color:C.violetSoft,fontSize:12,fontWeight:'700'}}>Forgot password?</Text></TouchableOpacity>
   <TouchableOpacity style={[s.btn,busy&&s.disabled]} onPress={()=>void login()} disabled={busy}>{busy?<ActivityIndicator color="#fff"/>:<><Text style={s.btnTxt}>Enter WORKIT</Text><Text style={s.arrow}>→</Text></>}</TouchableOpacity>
   <TouchableOpacity onPress={()=>navigation.navigate('Register')}><Text style={s.link}>New to WORKIT? <Text style={s.linkOn}>Create your profile</Text></Text></TouchableOpacity>
  </View></KeyboardAvoidingView>}

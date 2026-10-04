@@ -83,3 +83,17 @@ Record for each P0: platform, device, OS version, app build number, tester, date
 For hiring, use two separate accounts and record the job ID, application ID and exact offer/interview status after each action. Test both candidate declines separately with fresh applications. Verify that chat delivery failure does not roll back a successful API transition, and that retry does not create a duplicate interview or offer.
 
 Do not merge or submit to stores with any open P0 failure.
+
+## Account recovery release gate
+
+- [ ] Request reset from Login → Forgot password using a registered QA account.
+- [ ] Verify delivery to an email address outside the Supabase project team.
+- [ ] Open the link with WORKIT fully closed; it opens the reset form.
+- [ ] Open a fresh link with WORKIT already open; protected content and push routes stay blocked while verifying.
+- [ ] Expired, incomplete, wrong-type and duplicate-parameter links show a safe error.
+- [ ] Short/mismatched passwords stay local; duplicate taps create one update request.
+- [ ] Password update succeeds; returning to login closes the local recovery session.
+- [ ] New password logs in; previous password fails.
+- [ ] During session-restore failure, Try again recovers without a permanent blank screen.
+
+Source tests use mocks. These boxes require actual email delivery and Android/iPhone evidence.

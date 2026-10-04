@@ -11,7 +11,10 @@
     "typecheck": "tsc --noEmit",
     "doctor": "npx expo-doctor",
     "preview:build": "node scripts/build-preview.cjs",
-    "check:video": "node scripts/check-video-behavior.cjs"
+    "check:video": "node scripts/check-video-behavior.cjs",
+    "check:auth": "node scripts/check-auth-behavior.cjs",
+    "release:check": "node scripts/release-config.cjs",
+    "check:release-config": "node scripts/check-release-config.cjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

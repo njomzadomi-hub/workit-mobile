@@ -5,4 +5,4 @@ export const searchTalent=async({query='',profession='',location=''})=>({items:p
 const blocked=async()=>{throw new Error('Visual preview only. No messages, applications or offers are sent.');};
 export const applyToJob=blocked,openConversation=blocked,sendMessage=blocked,scheduleInterview=blocked,sendStructuredOffer=blocked,saveCandidate=blocked,unsaveCandidate=blocked;
 export const getSavedCandidates=async()=>({items:[]});
-export const supabase={auth:{signInWithPassword:async()=>({error:{message:'Visual preview only. Login is available in the native app.'}})}};
+export const supabase={auth:{resetPasswordForEmail:blocked,updateUser:blocked,signOut:blocked,signInWithPassword:async()=>({error:{message:'Visual preview only. Login is available in the native app.'}})}};
