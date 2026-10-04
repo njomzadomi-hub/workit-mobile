@@ -5,7 +5,7 @@
     "scheme": "workit",
     "version": "0.1.0",
     "orientation": "portrait",
-    "backgroundColor": "#000000",
+    "backgroundColor": "#05070A",
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "app.workit.mobile",
@@ -13,7 +13,11 @@
     },
     "android": {
       "package": "app.workit.mobile",
-      "versionCode": 1
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/adaptive-foreground.png",
+        "backgroundColor": "#8B5CF6"
+      }
     },
     "plugins": [
       [
@@ -22,7 +26,22 @@
           "photosPermission": "Allow WORKIT to access photos and videos you choose for your professional profile and work."
         }
       ],
-      "expo-notifications"
-    ]
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/brand/notification.png",
+          "color": "#8B5CF6"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#05070A",
+          "image": "./assets/brand/splash.png",
+          "imageWidth": 128
+        }
+      ]
+    ],
+    "icon": "./assets/brand/icon.png"
   }
 }

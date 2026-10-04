@@ -14,6 +14,13 @@ Notifications.setNotificationHandler({
 
 export async function registerForPushNotifications() {
   try {
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId ??
+      process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+    if (!projectId) return null;
+
+
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('workit-default', {
         name: 'WORKIT',
@@ -30,11 +37,6 @@ export async function registerForPushNotifications() {
     }
     if (status !== 'granted') return null;
 
-    const projectId =
-      Constants.expoConfig?.extra?.eas?.projectId ??
-      Constants.easConfig?.projectId ??
-      process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
-    if (!projectId) return null;
 
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     await registerPushDevice(token, Platform.OS);
